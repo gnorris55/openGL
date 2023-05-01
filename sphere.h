@@ -7,107 +7,35 @@
 #include <sstream>
 #include <iostream>
 #include <math.h>
-#include "shader.h"
 #include <glm/gtx/string_cast.hpp>
+#include "shader.h"
+#include "raw_model.h"
 
 class Sphere {
 	public:
 
 	Shader *program;
 	glm::vec3 displacement;
-	glm::vec3 movement = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 velocityVector = glm::vec3(0.0f, 0.0f, 0.0f);
 	GLFWwindow *window;
+	RawModel *model;
 
-	int numVertices;
-	int sectorCount;
-	int stackCount;
 	int radius;
 	float gravity = -9.8;
 	float velocity = 0.05f;
 	float startTime = 0.0f;
-	unsigned int VAO;
 
-	Sphere(Shader *program, glm::vec3 position, int radius, int  sectorCount, int stackCount, GLFWwindow *window) {
+	Sphere(Shader *program, glm::vec3 position, glm::vec3 velocityVector, int radius, GLFWwindow *window, RawModel *sphereModel) {
 		this->program = program;
-		this->radius = radius;
 		this->window = window;
-		this->sectorCount = sectorCount;
-		this->stackCount = stackCount;
+		this->radius = radius;
+		this->velocityVector = velocityVector;
 		displacement = position;
-		assignVertices();
+		model = sphereModel;
 
 	}
 
-	// creating the sphere
-	void assignVertices() {
-
-		float vertices[100000];
-		unsigned int VBO, VAO;
-
-		numVertices = createSphere(vertices);
-		
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-
-		glBindVertexArray(VAO);	
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-		glEnableVertexAttribArray(0);
-		glBindVertexArray(VAO);	
-
-
-	}
-
-	// creates vertices for the sphere
-	int createSphere(float vertices[]) {
-		int vertex = 0;
-
-		glm::vec3 points[100][100];
-		float x, y, z, xy;
-		float sectorStep = 2 * PI / sectorCount;
-		float stackStep = PI / stackCount;
-		float sectorAngle, stackAngle;
-
-		for (int i = 0; i <= stackCount; ++i) {
-			stackAngle = PI / 2 - i * stackStep;
-			//std::cout << stackAngle << "\n";
-
-			xy = cos(stackAngle);
-			z = sin(stackAngle);
-
-			for (int j = 0; j <= sectorCount; ++j) {
-
-				sectorAngle = j * sectorStep;
-				x = xy * cos(sectorAngle);
-				y = xy * sin(sectorAngle);
-				points[i][j] = glm::vec3(x, y, z);
-			}
-		}
-
-		for ( int i = 0; i < stackCount; ++i) {
-			//std::cout << "\n";
-			for ( int j = 0; j < sectorCount; ++j) {
-				vertexToElement(vertices, &vertex, points[i][j]);
-				vertexToElement(vertices, &vertex, points[i+1][j]);
-				vertexToElement(vertices, &vertex, points[i][j+1]);
-				vertexToElement(vertices, &vertex, points[i][j+1]);
-				vertexToElement(vertices, &vertex, points[i+1][j]);
-				vertexToElement(vertices, &vertex, points[i+1][j+1]);
-			}
-		}
-
-		return vertex;
-	}
-
-	void vertexToElement(float vertices[], int *vertex,  glm::vec3 vector) {
-		vertices[*vertex] = vector.x;
-		vertices[*vertex+1] = vector.y;
-		vertices[*vertex+2] = vector.z;
-	  	*vertex += 3;
-	}
-
-	glm::mat4 render() {
+	void generate() {
 			
 	        glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		glm::mat4 model = glm::mat4(1.0f);
@@ -122,12 +50,7 @@ class Sphere {
 
 		// rendering the cube
 
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINES, 0, numVertices);
-		glBindVertexArray(VAO);
 	
-		// return position for collision detection
-		return model;
 
 	}
 	

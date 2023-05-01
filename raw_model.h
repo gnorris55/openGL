@@ -1,3 +1,6 @@
+#ifndef RAW_MODEL_H
+#define RAW_MODEL_H
+
 #include "shader.h"
 
 class RawModel {
@@ -66,3 +69,6 @@ class Renderer {
 		glBindVertexArray(model.vaoID);
 	}
 };
+
+#endif
+

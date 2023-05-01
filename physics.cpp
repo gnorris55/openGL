@@ -17,7 +17,7 @@
 #include "sphere.h"
 #include "platform.h"
 #include "shader.h"
-#include "RawModel.h"
+#include "raw_model.h"
 
 // global variables
 const unsigned int SCR_WIDTH = 800;
@@ -125,7 +125,9 @@ class MainGameLoop {
 		Loader loader;
 		Renderer renderer;
 		RawModel cube = loader.loadToVAO(rectangleVertices, sizeof(rectangleVertices));
-		RawModel sphere = loader.loadToVAO(sphereVertices, sphereVerticesNumber*3*sizeof(float));
+		RawModel sphereModel = loader.loadToVAO(sphereVertices, sphereVerticesNumber*3*sizeof(float));
+		Sphere sphere1 = Sphere(&shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 2, window, &sphereModel); 
+		Sphere sphere2 = Sphere(&shaderProgram, glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 0.0f), 1, window, &sphereModel); 
 	
 		while (!glfwWindowShouldClose(window)) {
 			// input
@@ -146,17 +148,19 @@ class MainGameLoop {
 			//view = glm::rotate(view, glm::radians(camX*25.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 			view = glm::translate(view, glm::vec3(0.0f, 0.0f, -20.0f));
 			projection = glm::perspective(glm::radians(45.0f), (800.0f/600.0f), 0.1f, 100.0f);
-			model = glm::rotate(model, glm::radians(camX*25.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
 			unsigned int viewLoc = glGetUniformLocation(shaderProgram.ID, "view");
-			unsigned int modelLoc = glGetUniformLocation(shaderProgram.ID, "model");
 			unsigned int projectionLoc = glGetUniformLocation(shaderProgram.ID, "projection");
 			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 			glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	
-			renderer.render(cube);	
-			renderer.render(sphere);	
+
+			
+			renderer.render(cube);
+			sphere1.generate();	
+			renderer.render(*sphere1.model);	
+			
+			sphere2.generate();	
+			renderer.render(*sphere2.model);	
 
 			//if (checkSphereCollision(sphere1, sphere2) == 1)
 				//sphereCollisionResponse(&sphere1, &sphere2);
