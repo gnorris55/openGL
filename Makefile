@@ -1,7 +1,7 @@
 .phony all:
 
-all: physics
+all: main_game_loop
 
-physics: physics.cpp
-	g++ physics.cpp glad.c -o out -lglfw -ldl -lGLU -lGL
+main_game_loop: main_game_loop.cpp
+	g++ main_game_loop.cpp glad.c -o game -lglfw -ldl -lGLU -lGL
 

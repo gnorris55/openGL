@@ -1,3 +1,6 @@
+#ifndef PLATFORM_H
+#define PLATFORM_H
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -13,15 +16,14 @@ class Rectangle {
         public:
         Shader *program;
 	RawModel *model;
-        glm::vec3 position;
+        glm::vec3 displacement;
         float xScale;
         float zScale;
         float yScale;
 
         Rectangle(Shader *program, glm::vec3 position, float xScale, float yScale, float zScale, RawModel *rectangleModel) {
                 this->program = program;
-                this->position = position;
-		this->position.y -= 0.5f;
+                this->displacement = position;
                 this->xScale = xScale;
                 this->yScale = yScale;
                 this->zScale = zScale;
@@ -34,11 +36,13 @@ class Rectangle {
                 glUniform4fv(glGetUniformLocation(program->ID, "color"), 1, glm::value_ptr(color));
 
                 glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, position);
-                model = glm::scale(model,glm::vec3(xScale, 0.5f, zScale));
+                model = glm::translate(model, displacement);
+                model = glm::scale(model,glm::vec3(xScale, yScale, zScale));
                 glUniformMatrix4fv(glGetUniformLocation(program->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
         }
 
 };
 
+
+#endif

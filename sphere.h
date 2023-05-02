@@ -1,3 +1,7 @@
+#ifndef SPHERE_H
+#define SPHERE_H
+
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -64,6 +68,10 @@ class Sphere {
 			displacement.x -= velocity;
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 			displacement.x += velocity;
+		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+			displacement.z -= velocity;
+		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+			displacement.z += velocity;
         }
 };
 
@@ -285,3 +293,5 @@ class GolfBall: public Sphere {
 };
 
 */
+
+#endif

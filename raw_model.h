@@ -62,10 +62,9 @@ class Renderer {
                 glClear(GL_COLOR_BUFFER_BIT);
 	}
 
-	void render(RawModel model) {
+	void render(RawModel model, GLenum type) {
 		glBindVertexArray(model.vaoID);
-		//std::cout << model.vertexCount << ", " << model.vaoID << "\n";
-		glDrawArrays(GL_LINES, 0, model.vertexCount);
+		glDrawArrays(type, 0, model.vertexCount);
 		glBindVertexArray(model.vaoID);
 	}
 };
