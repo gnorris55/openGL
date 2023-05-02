@@ -28,9 +28,9 @@ class PhysicsManager {
 		float yDistance = abs(sphere.displacement.y - rectangle.displacement.y);
 		float zDistance = abs(sphere.displacement.z - rectangle.displacement.z);
 
-		std::cout << xDistance << "\n";
-		std::cout << yDistance << "\n";
-		std::cout << zDistance << "\n";
+		//std::cout << xDistance << "\n";
+		//std::cout << yDistance << "\n";
+		//std::cout << zDistance << "\n";
 		
 		if (xDistance >= ((rectangle.xScale/2) + sphere.radius) ||
 		    yDistance >= ((rectangle.yScale/2) + sphere.radius) ||

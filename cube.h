@@ -85,13 +85,11 @@ class Cube {
 			float currZ = -initialVelocity*flightTime*cos(radianAngle);
 			float currY = initialVelocity*flightTime*sin(radianAngle) + 0.5*gravity*pow(flightTime, 2);
 			
-			//std::cout << "flight time: " << flightTime << ", y position: " << currY << ", x position: " << currX << "\n";
 			model = glm::rotate(model, glm::radians(pointer.rotation), glm::vec3(0.0f, 1.0f, 0.0f));
 			model = glm::translate(model, glm::vec3(0.0f, currY, currZ));
 			if (currY <= 0) {
 				shotLanded = 1;
 				movement = glm::vec3(0.0f, currY, currZ);
-				std::cout << "current z pos: " << currZ << "\n";
 				float xVelocity = initialVelocity*cos(radianAngle);
 				float yVelocity = initialVelocity*sin(radianAngle) + gravity*flightTime;
 				std::cout << "x velocity: " << xVelocity << ", y velocity: " << yVelocity << "\n";

@@ -122,15 +122,16 @@ class MainGameLoop {
 		Loader loader;
 		Renderer renderer;
 
-		//Terrain terrain = Terrain(0, 0);		
-		//RawModel terrainModel = terrain.generate(loader);
+		Terrain terrain = Terrain(&shaderProgram, 0, 0);		
+		RawModel terrainModel = terrain.generateTerrain(loader);
 		RawModel cube = loader.loadToVAO(rectangleVertices, sizeof(rectangleVertices));
 		RawModel sphereModel = loader.loadToVAO(sphereVertices, sphereVerticesNumber*3*sizeof(float));
 		Sphere mainSphere = Sphere(&shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1, window, &sphereModel); 
 		Sphere sphere1 = Sphere(&shaderProgram, glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1, window, &sphereModel); 
 		Rectangle platform = Rectangle(&shaderProgram, glm::vec3(0.0f, -4.0f, 0.0f), 18.0, 1.0, 18.0, &cube);
 
-		glEnable(GL_DEPTH_TEST);
+		//glEnable(GL_DEPTH_TEST);
+		glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 
 		while (!glfwWindowShouldClose(window)) {
 			// input
@@ -146,8 +147,8 @@ class MainGameLoop {
 			glm::mat4 model = glm::mat4(1.0f);
 			glm::mat4 projection = glm::mat4(1.0f);
 
-			view = glm::translate(view, glm::vec3(0.0f, 0.0f, -25.0f));
-			//view = glm::rotate(view, glm::radians(90.0f),glm::vec3(1.0f, 0.0f, 0.0f));
+			view = glm::translate(view, glm::vec3(0.0f, -5.0f, -60.0f));
+			view = glm::rotate(view, glm::radians(20.0f),glm::vec3(1.0f, 0.0f, 0.0f));
 			projection = glm::perspective(glm::radians(45.0f), (800.0f/600.0f), 0.1f, 100.0f);
 
 			unsigned int viewLoc = glGetUniformLocation(shaderProgram.ID, "view");
@@ -155,24 +156,26 @@ class MainGameLoop {
 			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 			glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 			
-			platform.generate();	
-			renderer.render(*platform.model, GL_TRIANGLES);
+			//platform.generate();	
+			//renderer.render(*platform.model, GL_TRIANGLES);
 
-			//TODO: renderer.render(terrainModel, GL_LINES);
+			terrain.generate();
+			renderer.render(terrainModel, GL_TRIANGLES);
 
 			mainSphere.controls();
 
 			mainSphere.generate();
 			renderer.render(*mainSphere.model, GL_LINES);	
-			sphere1.generate();	
-			renderer.render(*sphere1.model, GL_LINES);	
+			//sphere1.generate();	
+			//renderer.render(*sphere1.model, GL_LINES);	
 
-			
+			/*	
 			if (physicsManager.checkSphereOnRectangleCollision(mainSphere, platform) == 1 || physicsManager.checkSphereCollision(mainSphere, sphere1) == 1)
 				std::cout << "collision!\n";
 			else
 				std::cout << "no collision\n";
 
+			*/
 			glfwSwapBuffers(window);
 			glfwPollEvents();	
 		}
@@ -219,7 +222,6 @@ int createSphere(float vertices[], int stackCount, int sectorCount) {
 
         for (int i = 0; i <= stackCount; ++i) {
                 stackAngle = PI / 2 - i * stackStep;
-                //std::cout << stackAngle << "\n";
 
                 xy = cos(stackAngle);
                 z = sin(stackAngle);

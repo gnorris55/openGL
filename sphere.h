@@ -40,22 +40,16 @@ class Sphere {
 	}
 
 	void generate() {
-			
-	        glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		glm::mat4 model = glm::mat4(1.0f);
-		float rotation = glfwGetTime() * 50.0f;
-		model = glm::translate(model, displacement);	
-		
-		model = glm::rotate(model, glm::radians(rotation), glm::vec3(1.0f, 0.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(radius, radius, radius));
+		glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+                glm::mat4 model = glm::mat4(1.0f);
+                float rotation = glfwGetTime() * 50.0f;
+                model = glm::translate(model, displacement);
 
-		glUniform4fv(glGetUniformLocation(program->ID, "color"), 1, glm::value_ptr(color));
-		glUniformMatrix4fv(glGetUniformLocation(program->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+                model = glm::rotate(model, glm::radians(rotation), glm::vec3(1.0f, 0.0f, 1.0f));
+                model = glm::scale(model, glm::vec3(radius, radius, radius));
 
-		// rendering the cube
-
-	
-
+                glUniform4fv(glGetUniformLocation(program->ID, "color"), 1, glm::value_ptr(color));
+                glUniformMatrix4fv(glGetUniformLocation(program->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 	}
 	
 	void controls() {

@@ -42,9 +42,6 @@ class Loader {
 		unsigned int VBO;
 		glGenBuffers(1, &VBO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		for (int i = 0; i < 36; i++) {
-			std::cout << vertices[i] << "\n";
-		}
 		glBufferData(GL_ARRAY_BUFFER, numVertices, vertices, GL_STATIC_DRAW);
                 glVertexAttribPointer(attributeNumber, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
                 glEnableVertexAttribArray(0);
@@ -65,6 +62,7 @@ class Renderer {
 	void render(RawModel model, GLenum type) {
 		glBindVertexArray(model.vaoID);
 		glDrawArrays(type, 0, model.vertexCount);
+		//glDrawArrays(type, 0, 9*6*3);
 		glBindVertexArray(model.vaoID);
 	}
 };

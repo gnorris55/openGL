@@ -51,7 +51,6 @@ class Shader {
 			glAttachShader(ID, fragmentShader);
 			glLinkProgram(ID);
 			checkCompileErrors(ID, "PROGRAM");
-			std::cout << ID << "\n";
 			//deleting shaders after adding them to the program
 			glDeleteShader(vertexShader);
 			glDeleteShader(fragmentShader);
