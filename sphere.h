@@ -70,7 +70,11 @@ class Sphere {
 
 class Editor: public Sphere {
 	using Sphere::Sphere;
+	
 	public:
+
+	int mode = 1;
+
  	int controls() {
                 const float speed = 0.05f;
                 if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -85,15 +89,19 @@ class Editor: public Sphere {
                         radius += 0.07;
                 if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
                         radius -= 0.07;
-                if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
-			return 1;
-                if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
-			return -1;
+		if (mode == 1) {
+			if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+				return 1;
+			if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+				return -1;
+		}
 
 		return 0;	
         }
 
-	
+	void setMode(int mode) {
+		this->mode = mode;
+	}
 };
 
 

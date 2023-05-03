@@ -20,6 +20,7 @@
 #include "raw_model.h"
 #include "terrain.h"
 #include "physics_manager.h"
+#include "light.h"
 
 // global variables
 const unsigned int SCR_WIDTH = 800;
@@ -121,11 +122,14 @@ class MainGameLoop {
 		Loader loader;
 		Renderer renderer;
 
+		RawModel cube = loader.loadToVAO(rectangleVertices, sizeof(rectangleVertices));
 		RawModel sphereModel = loader.loadToVAO(sphereVertices, sphereVerticesNumber*3*sizeof(float));
 		Editor pointer =  Editor(&shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), 3, window, &sphereModel);
 			
 		Terrain terrain = Terrain(&shaderProgram, 0, 0);		
 		RawModel terrainModel = terrain.generateTerrain(loader);
+
+		Light lightCube = Light(&shaderProgram, &cube, window);
 
 		glEnable(GL_DEPTH_TEST);
 		glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
@@ -148,9 +152,12 @@ class MainGameLoop {
 			glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 			glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 			
+			//TODO: add lighting
+
 			//rendering objects
 			pointer.generate();
 			renderer.render(*pointer.model, GL_LINES);
+			
 			int pointerCommand = pointer.controls();
 			if (pointerCommand != 0) {
 				terrainModel = terrain.raiseVertices(&pointer, loader, pointerCommand);
