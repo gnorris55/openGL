@@ -151,9 +151,9 @@ class MainGameLoop {
 			//rendering objects
 			pointer.generate();
 			renderer.render(*pointer.model, GL_LINES);
-
-			if (pointer.controls() == 1) {
-				terrainModel = terrain.raiseVertices(&pointer, loader);
+			int pointerCommand = pointer.controls();
+			if (pointerCommand != 0) {
+				terrainModel = terrain.raiseVertices(&pointer, loader, pointerCommand);
 			}
 
 			terrain.generate();	// rendering terrain

@@ -23,7 +23,7 @@ class Sphere {
 	GLFWwindow *window;
 	RawModel *model;
 
-	int radius;
+	float radius;
 	float gravity = -9.8;
 	float velocity = 0.05f;
 	float startTime = 0.0f;
@@ -81,6 +81,10 @@ class Editor: public Sphere {
                         displacement.x -= velocity;
                 if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
                         displacement.x += velocity;
+                if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+                        radius += 0.07;
+                if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+                        radius -= 0.07;
                 if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
 			return 1;
                 if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)

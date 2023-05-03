@@ -62,18 +62,22 @@ class Terrain {
 		return loader.loadToVAO(vertices, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
 	}
 
-	RawModel raiseVertices(Editor *pointer, Loader loader) {
+	RawModel raiseVertices(Editor *pointer, Loader loader, int type) {
 		for (int i = 0; i < VERTEX_COUNT; i++) {
 			for (int j = 0; j < VERTEX_COUNT; j++) {
 				glm::vec3 point = points[i][j];
 				float posX = point.x - (float)VERTEX_COUNT/2;
 				float posZ = point.z - (float)VERTEX_COUNT/2;
-				if (posX < pointer->displacement.x + pointer->radius && posX > pointer->displacement.x - pointer->radius &&
-				    posZ < pointer->displacement.z + pointer->radius && posZ > pointer->displacement.z - pointer->radius) {
+				float xDistance = abs(pointer->displacement.x - posX);
+				float zDistance = abs(pointer->displacement.z - posZ);
+				float totalDistance = sqrt(pow(xDistance, 2) + pow(zDistance,2));
 				
-					points[i][j].y += 0.10f;
-					std::cout << pointer->displacement.x << ", " << pointer->displacement.z << "\n";
-					std::cout << posX << ", " <<  posZ << "\n";
+				if (totalDistance < pointer->radius && point.y < 2 && point.y > -2 || point.y >= 2 && type == -1 || point.y <= -2 && type == 1) {
+					
+					float intensity = (pointer->radius-totalDistance)/pointer->radius;
+					
+					points[i][j].y += (type)*(0.10f * intensity);
+					//std::cout << posX << ", " <<  posZ << "\n";
 				}
 
 			}
