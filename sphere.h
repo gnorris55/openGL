@@ -20,7 +20,6 @@ class Sphere {
 
 	Shader *program;
 	glm::vec3 displacement;
-	glm::vec3 velocityVector = glm::vec3(0.0f, 0.0f, 0.0f);
 	GLFWwindow *window;
 	RawModel *model;
 
@@ -29,11 +28,10 @@ class Sphere {
 	float velocity = 0.05f;
 	float startTime = 0.0f;
 
-	Sphere(Shader *program, glm::vec3 position, glm::vec3 velocityVector, int radius, GLFWwindow *window, RawModel *sphereModel) {
+	Sphere(Shader *program, glm::vec3 position, int radius, GLFWwindow *window, RawModel *sphereModel) {
 		this->program = program;
 		this->window = window;
 		this->radius = radius;
-		this->velocityVector = velocityVector;
 		displacement = position;
 		model = sphereModel;
 
@@ -45,7 +43,7 @@ class Sphere {
                 float rotation = glfwGetTime() * 50.0f;
                 model = glm::translate(model, displacement);
 
-                model = glm::rotate(model, glm::radians(rotation), glm::vec3(1.0f, 0.0f, 1.0f));
+                //model = glm::rotate(model, glm::radians(rotation), glm::vec3(1.0f, 0.0f, 1.0f));
                 model = glm::scale(model, glm::vec3(radius, radius, radius));
 
                 glUniform4fv(glGetUniformLocation(program->ID, "color"), 1, glm::value_ptr(color));
@@ -68,6 +66,42 @@ class Sphere {
 			displacement.z += velocity;
         }
 };
+
+
+class Editor: public Sphere {
+	using Sphere::Sphere;
+	public:
+ 	int controls() {
+                const float speed = 0.05f;
+                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+                        displacement.z -= velocity;
+                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+                        displacement.z += velocity;
+                if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+                        displacement.x -= velocity;
+                if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+                        displacement.x += velocity;
+                if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+			return 1;
+                if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+			return -1;
+
+		return 0;	
+        }
+
+	
+};
+
+
+
+
+
+
+
+
+
+
+
 
 
 

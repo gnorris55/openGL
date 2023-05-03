@@ -37,7 +37,6 @@ class MainGameLoop {
 
 	public:
 
-	
 	int start() {
 		
 		// initializing window
@@ -122,15 +121,13 @@ class MainGameLoop {
 		Loader loader;
 		Renderer renderer;
 
+		RawModel sphereModel = loader.loadToVAO(sphereVertices, sphereVerticesNumber*3*sizeof(float));
+		Editor pointer =  Editor(&shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), 3, window, &sphereModel);
+			
 		Terrain terrain = Terrain(&shaderProgram, 0, 0);		
 		RawModel terrainModel = terrain.generateTerrain(loader);
-		RawModel cube = loader.loadToVAO(rectangleVertices, sizeof(rectangleVertices));
-		RawModel sphereModel = loader.loadToVAO(sphereVertices, sphereVerticesNumber*3*sizeof(float));
-		Sphere mainSphere = Sphere(&shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1, window, &sphereModel); 
-		Sphere sphere1 = Sphere(&shaderProgram, glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1, window, &sphereModel); 
-		Rectangle platform = Rectangle(&shaderProgram, glm::vec3(0.0f, -4.0f, 0.0f), 18.0, 1.0, 18.0, &cube);
 
-		//glEnable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);
 		glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 
 		while (!glfwWindowShouldClose(window)) {
@@ -140,42 +137,29 @@ class MainGameLoop {
 			glUseProgram(shaderProgram.ID);
 
 			// rendering the camera	
-			const float radius = 10.0f;
-			float camX = sin(glfwGetTime()) * radius;
-			float camZ = cos(glfwGetTime()) * radius;
 			glm::mat4 view = glm::mat4(1.0f);
 			glm::mat4 model = glm::mat4(1.0f);
 			glm::mat4 projection = glm::mat4(1.0f);
 
-			view = glm::translate(view, glm::vec3(0.0f, -5.0f, -60.0f));
+			view = glm::translate(view, glm::vec3(0.0f, -5.0f, -40.0f));
 			view = glm::rotate(view, glm::radians(20.0f),glm::vec3(1.0f, 0.0f, 0.0f));
 			projection = glm::perspective(glm::radians(45.0f), (800.0f/600.0f), 0.1f, 100.0f);
 
-			unsigned int viewLoc = glGetUniformLocation(shaderProgram.ID, "view");
-			unsigned int projectionLoc = glGetUniformLocation(shaderProgram.ID, "projection");
-			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-			glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+			glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+			glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 			
-			//platform.generate();	
-			//renderer.render(*platform.model, GL_TRIANGLES);
+			//rendering objects
+			pointer.generate();
+			renderer.render(*pointer.model, GL_LINES);
 
-			terrain.generate();
+			if (pointer.controls() == 1) {
+				terrainModel = terrain.raiseVertices(&pointer, loader);
+			}
+
+			terrain.generate();	// rendering terrain
 			renderer.render(terrainModel, GL_TRIANGLES);
 
-			mainSphere.controls();
-
-			mainSphere.generate();
-			renderer.render(*mainSphere.model, GL_LINES);	
-			//sphere1.generate();	
-			//renderer.render(*sphere1.model, GL_LINES);	
-
-			/*	
-			if (physicsManager.checkSphereOnRectangleCollision(mainSphere, platform) == 1 || physicsManager.checkSphereCollision(mainSphere, sphere1) == 1)
-				std::cout << "collision!\n";
-			else
-				std::cout << "no collision\n";
-
-			*/
+			// finishing frame
 			glfwSwapBuffers(window);
 			glfwPollEvents();	
 		}
@@ -208,8 +192,8 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
 void processInput(GLFWwindow *window, unsigned int program) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-	
-}
+}	
+
 // creates vertices for the sphere
 int createSphere(float vertices[], int stackCount, int sectorCount) {
         int vertex = 0;

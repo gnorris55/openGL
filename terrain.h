@@ -3,18 +3,21 @@
 
 #include "raw_model.h"
 #include "shader.h"
+#include "sphere.h"
 
 class Terrain {
 	
 	public:
 
 	//constant variables
-	float SIZE = 400;
+	float SIZE = 128;
 	int VERTEX_COUNT = 128;
 	int SQUARE_POINTS = 18;
 
-	RawModel *model;
 	Shader *program;
+	glm::vec3 points[128][128];
+	float heightMap[128][128];
+
 	float x;
 	float z;
 
@@ -22,6 +25,7 @@ class Terrain {
 		x = gridX * SIZE;
 		z = gridX * SIZE;
 		program = shader;
+
 	}
 
 	void generate() {
@@ -36,17 +40,12 @@ class Terrain {
 	
 	}
 
-	void readHeightMap(char *fileName) {
-		//TODO: read pixels of heightmap
-	}
-
 	RawModel generateTerrain(Loader loader) {
 		int count = VERTEX_COUNT*VERTEX_COUNT;
 		int posX, posY, posZ;
 		int vertexPointer = 0;
 		int squarePoints = 18;
 		float vertices[count*SQUARE_POINTS];
-		glm::vec3 points[VERTEX_COUNT][VERTEX_COUNT];
 
 		for (int i = 0; i < VERTEX_COUNT; i++) {
 			for (int j = 0; j < VERTEX_COUNT; j++) {
@@ -54,10 +53,44 @@ class Terrain {
 				posY = 0;
 				posZ = (float)i/((float) VERTEX_COUNT - 1) * SIZE;
 				points[i][j] = glm::vec3(posX, posY, posZ);
+				heightMap[i][j] = posY;
 			}
 			
 		}
+		mapVertices(vertices);
 
+		return loader.loadToVAO(vertices, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
+	}
+
+	RawModel raiseVertices(Editor *pointer, Loader loader) {
+		for (int i = 0; i < VERTEX_COUNT; i++) {
+			for (int j = 0; j < VERTEX_COUNT; j++) {
+				glm::vec3 point = points[i][j];
+				float posX = point.x - (float)VERTEX_COUNT/2;
+				float posZ = point.z - (float)VERTEX_COUNT/2;
+				if (posX < pointer->displacement.x + pointer->radius && posX > pointer->displacement.x - pointer->radius &&
+				    posZ < pointer->displacement.z + pointer->radius && posZ > pointer->displacement.z - pointer->radius) {
+				
+					points[i][j].y += 0.10f;
+					std::cout << pointer->displacement.x << ", " << pointer->displacement.z << "\n";
+					std::cout << posX << ", " <<  posZ << "\n";
+				}
+
+			}
+		}
+		return updateVertices(loader);
+	
+
+	}
+	
+	RawModel updateVertices(Loader loader) {
+		float vertices[VERTEX_COUNT*VERTEX_COUNT*SQUARE_POINTS];
+		mapVertices(vertices);
+
+		return loader.loadToVAO(vertices, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
+	}
+			
+	void mapVertices(float vertices[]) {
 		int vertex = 0;
 		for (int i = 0; i < VERTEX_COUNT; i++) {
 			for (int j = 0; j < VERTEX_COUNT; j++) {
@@ -73,8 +106,15 @@ class Terrain {
 			}
 
 		}
+	}
 
-		return loader.loadToVAO(vertices, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
+	void printPoints() {
+		for (int i = 0; i < VERTEX_COUNT; i++) {
+			for (int j = 0; j < VERTEX_COUNT; j++) {
+				glm::vec3 point = points[i][j];
+				std::cout << "["<< point.x << ", " << point.y << ", " << point.z << "]\n";
+			}
+		}
 	}
 
 	private:
@@ -85,6 +125,7 @@ class Terrain {
 		vertices[*vertex+2] = vector.z;
 		*vertex += 3;
 	}
+
 };
 
 
