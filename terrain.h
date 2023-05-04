@@ -46,6 +46,7 @@ class Terrain {
 		int vertexPointer = 0;
 		int squarePoints = 18;
 		float vertices[count*SQUARE_POINTS];
+		float normals[count*SQUARE_POINTS];
 
 		for (int i = 0; i < VERTEX_COUNT; i++) {
 			for (int j = 0; j < VERTEX_COUNT; j++) {
@@ -57,9 +58,9 @@ class Terrain {
 			}
 			
 		}
-		mapVertices(vertices);
+		mapVertices(vertices, normals);
 
-		return loader.loadToVAO(vertices, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
+		return loader.loadToVAO(vertices, normals, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
 	}
 
 	RawModel raiseVertices(Editor *pointer, Loader loader, int type) {
@@ -89,22 +90,44 @@ class Terrain {
 	
 	RawModel updateVertices(Loader loader) {
 		float vertices[VERTEX_COUNT*VERTEX_COUNT*SQUARE_POINTS];
-		mapVertices(vertices);
+		float normals[VERTEX_COUNT*VERTEX_COUNT*SQUARE_POINTS];
+		mapVertices(vertices, normals);
 
-		return loader.loadToVAO(vertices, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
+		return loader.loadToVAO(vertices, normals, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
 	}
 			
-	void mapVertices(float vertices[]) {
+	void mapVertices(float vertices[], float normals[]) {
 		int vertex = 0;
+		int normalsVertex = 0;
 		for (int i = 0; i < VERTEX_COUNT; i++) {
 			for (int j = 0; j < VERTEX_COUNT; j++) {
 				if ((j != VERTEX_COUNT-1 && i != VERTEX_COUNT-1) || (j == VERTEX_COUNT-1 && i == VERTEX_COUNT-1)) {
+
+					//first triangle
 					vertexToElement(vertices, &vertex, points[i][j]);
 					vertexToElement(vertices, &vertex, points[i][j+1]);
 					vertexToElement(vertices, &vertex, points[i+1][j]);
+					
+					glm::vec3 normalVec = calculateNormals(points[i][j], points[i][j+1], points[i+1][j]);
+					glm::vec3 scalar = glm::vec3(-1.0f, -1.0f, -1.0f);
+					normalVec *= scalar;
+					vertexToElement(normals, &normalsVertex, normalVec);
+					vertexToElement(normals, &normalsVertex, normalVec);
+					vertexToElement(normals, &normalsVertex, normalVec);
+
+
+					//second triangle
 					vertexToElement(vertices, &vertex, points[i][j+1]);
 					vertexToElement(vertices, &vertex, points[i+1][j+1]);
 					vertexToElement(vertices, &vertex, points[i+1][j]);
+					
+					normalVec = calculateNormals(points[i][j+1], points[i+1][j+1], points[i+1][j]);
+					normalVec *= scalar;
+					vertexToElement(normals, &normalsVertex, normalVec);
+					vertexToElement(normals, &normalsVertex, normalVec);
+					vertexToElement(normals, &normalsVertex, normalVec);
+					
+					
 				}
 
 			}
@@ -121,6 +144,7 @@ class Terrain {
 		}
 	}
 
+
 	private:
 
 	void vertexToElement(float vertices[], int *vertex,  glm::vec3 vector) {
@@ -128,6 +152,12 @@ class Terrain {
 		vertices[*vertex+1] = vector.y;
 		vertices[*vertex+2] = vector.z;
 		*vertex += 3;
+	}
+
+	glm::vec3 calculateNormals(glm::vec3 vectorA, glm::vec3 vectorB, glm::vec3 vectorC) {
+		//(B-A)x(C-A)
+		return glm::cross(vectorB - vectorA, vectorC - vectorA);
+
 	}
 
 };

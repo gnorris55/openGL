@@ -22,9 +22,10 @@ class Loader {
 	
 	public:
 	
-	RawModel loadToVAO(float vertices[], int numVertices) {
+	RawModel loadToVAO(float vertices[], float normals[],int numVertices) {
 		unsigned int VAO = createVAO();	
-		storeDataInAttributeList(0, numVertices, vertices);
+		storeDataInAttributeList(0, numVertices, 3, vertices);
+		storeDataInAttributeList(1, numVertices, 3, normals);
 		return RawModel(VAO, numVertices/3*sizeof(float)); 
 
 	}
@@ -38,13 +39,13 @@ class Loader {
 		return VAO;
 	}
 
-	void storeDataInAttributeList(int attributeNumber, int numVertices, float vertices[]) {
+	void storeDataInAttributeList(int attributeNumber, int count, int verticesInAttribute, float vertices[]) {
 		unsigned int VBO;
 		glGenBuffers(1, &VBO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, numVertices, vertices, GL_STATIC_DRAW);
-                glVertexAttribPointer(attributeNumber, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-                glEnableVertexAttribArray(0);
+		glBufferData(GL_ARRAY_BUFFER, count, vertices, GL_STATIC_DRAW);
+                glVertexAttribPointer(attributeNumber, verticesInAttribute, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+                glEnableVertexAttribArray(attributeNumber);
 	}
 };
 
