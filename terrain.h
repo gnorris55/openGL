@@ -15,29 +15,33 @@ class Terrain {
 	int SQUARE_POINTS = 18;
 
 	Shader *program;
+	Renderer renderer;
+	glm::vec3 color;
 	glm::vec3 points[128][128];
 	float heightMap[128][128];
 
 	float x;
 	float z;
 
-	Terrain(Shader *shader,int gridX, int gridZ) {
+	Terrain(Shader *program, Renderer renderer, int gridX, int gridZ, glm::vec3 color) {
+		this->program = program;
+		this->renderer = renderer;
+		this->color = color;
 		x = gridX * SIZE;
-		z = gridX * SIZE;
-		program = shader;
-
+		z = gridX * SIZE;	
 	}
 
-	void generate() {
-		glm::vec4 color = glm::vec4(0.22f, 0.91f, 0.19f, 1.0f);
+	void render(RawModel *rawModel, glm::vec3 lightPosition, glm::vec3 lightColor, glm::vec3 viewPos) {
 		glm::mat4 model = glm::mat4(1.0f);
-                float rotation = glfwGetTime() * 50.0f;
-
 		model = glm::translate(model, glm::vec3(-SIZE/2, 0.0f, -SIZE/2));
 
-                glUniform4fv(glGetUniformLocation(program->ID, "color"), 1, glm::value_ptr(color));
 		glUniformMatrix4fv(glGetUniformLocation(program->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-	
+                glUniform3fv(glGetUniformLocation(program->ID, "objectColor"), 1, glm::value_ptr(color));
+                glUniform3fv(glGetUniformLocation(program->ID, "lightColor"), 1, glm::value_ptr(lightColor));
+                glUniform3fv(glGetUniformLocation(program->ID, "lightPos"), 1, glm::value_ptr(lightPosition));
+                glUniform3fv(glGetUniformLocation(program->ID, "viewPos"), 1, glm::value_ptr(viewPos));
+
+		renderer.render(*rawModel, GL_TRIANGLES);
 	}
 
 	RawModel generateTerrain(Loader loader) {
@@ -73,7 +77,7 @@ class Terrain {
 				float zDistance = abs(pointer->displacement.z - posZ);
 				float totalDistance = sqrt(pow(xDistance, 2) + pow(zDistance,2));
 				
-				if (totalDistance < pointer->radius && point.y < 2 && point.y > -2 || point.y >= 2 && type == -1 || point.y <= -2 && type == 1) {
+				if (totalDistance < pointer->radius) {
 					
 					float intensity = (pointer->radius-totalDistance)/pointer->radius;
 					

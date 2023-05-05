@@ -21,6 +21,8 @@
 #include "terrain.h" //blocked until normals can be added
 #include "physics_manager.h"
 #include "light.h"
+#include "game_object.h"
+#include "camera.h"
 
 // global variables
 const unsigned int SCR_WIDTH = 800;
@@ -162,83 +164,48 @@ class MainGameLoop {
 			 0.0f,  1.0f,  0.0f,
 			 0.0f,  1.0f,  0.0f
 		};
-			
+		
+		// creating instances of manager classes	
 		PhysicsManager physicsManager;
 		Loader loader;
 		Renderer renderer;
 
+
+		// creatign game objects and terrain
 		RawModel cube = loader.loadToVAO(rectangleVertices, cubeNormals, sizeof(rectangleVertices));
-		//RawModel sphereModel = loader.loadToVAO(sphereVertices, sphereVerticesNumber*3*sizeof(float));
-		Editor pointer =  Editor(&programShader, glm::vec3(0.0f, 0.0f, 0.0f), 3, window, &cube);
-			
-		Terrain terrain = Terrain(&programShader, 0, 0);		
-		RawModel terrainModel = terrain.generateTerrain(loader);
+		GameObject cubeObject = GameObject(&programShader, window, renderer, glm::vec3(5.0f, 5.0f, 0.0f), glm::vec3(0.5, 0.5, 0.5), &cube);
+		Terrain terrain = Terrain(&programShader, renderer, 0, 0, glm::vec3(0.0f, 0.80f, 0.48f));
+		RawModel terrainModel = terrain.generateTerrain(loader);		
 
-		Light lightCube = Light(&lightingShader, glm::vec3(1.2f, 1.0f, 2.0f), &cube, window);
-		lightCube.displacement.y += 5;
-
+		// creating camera and light(s)
+		Light lightCube = Light(&lightingShader, renderer, glm::vec3(0.0f, 5.0f, 2.0f), glm::vec3(0.7f, 0.5f, 0.3f), &cube, window);
+		Camera camera = Camera(glm::vec3(0.0f, -7.0f, -20.0f), 20.0f);
+		
 		glEnable(GL_DEPTH_TEST);
-		//glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 
 		while (!glfwWindowShouldClose(window)) {
+			
+			//preparing frame
+			renderer.prepare();
+			
 			// input
 			processInput(window, programShader.ID);
-			renderer.prepare();
+			lightCube.controls();
+			
 
-			glm::mat4 view = glm::mat4(1.0f);
-			glm::mat4 projection = glm::mat4(1.0f);
-			glm::mat4 model = glm::mat4(1.0f);
-			float rotation = 20.0f*glfwGetTime();
-
-			view = glm::translate(view, glm::vec3(0.0f, 0.0f, -60.0f));
-			view = glm::rotate(view, glm::radians(20.0f),glm::vec3(1.0f, 0.0f, 0.0f));
-			projection = glm::perspective(glm::radians(45.0f), (800.0f/600.0f), 0.1f, 100.0f);
-
-			//creating lightsource
+			//rendering light source
 			glUseProgram(lightingShader.ID);
-
-			glUniformMatrix4fv(glGetUniformLocation(lightingShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-			glUniformMatrix4fv(glGetUniformLocation(lightingShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-			
-			//lightCube.controls();
-			lightCube.generate();
-			renderer.render(*lightCube.model, GL_TRIANGLES);
-			
+			camera.define(lightingShader.ID);	
+			lightCube.render();
+		
+			// rendering gameObjects and terrain	
 			glUseProgram(programShader.ID);
-			//model = glm::rotate(model, glm::radians(rotation),glm::vec3(1.0f, 0.0f, 1.0f));
-			glm::vec3 objectColor = glm::vec3(0.7f, 0.5f, 0.3f);	
-			glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-			glm::vec3 viewPos = glm::vec3(0.0f, 0.0f, -10.0f);	
-			glUniformMatrix4fv(glGetUniformLocation(programShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-			glUniformMatrix4fv(glGetUniformLocation(programShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-			glUniformMatrix4fv(glGetUniformLocation(programShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-			glUniform3fv(glGetUniformLocation(programShader.ID, "objectColor"), 1, glm::value_ptr(objectColor));
-			glUniform3fv(glGetUniformLocation(programShader.ID, "lightColor"), 1, glm::value_ptr(lightColor));
-			glUniform3fv(glGetUniformLocation(programShader.ID, "lightPos"), 1, glm::value_ptr(lightCube.displacement));
-			glUniform3fv(glGetUniformLocation(programShader.ID, "viewPos"), 1, glm::value_ptr(viewPos));
+			camera.define(programShader.ID);
 
-			terrain.generate();
-			renderer.render(terrainModel, GL_TRIANGLES);
+			terrain.render(&terrainModel, lightCube.displacement, lightCube.color, camera.displacement);	
+			cubeObject.render(lightCube.displacement, lightCube.color, camera.displacement);
 			
-			model = glm::translate(model, glm::vec3(2.0f, 4.0f, 0.0f));			
-			glUniformMatrix4fv(glGetUniformLocation(programShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-			renderer.render(cube, GL_TRIANGLES);
-			
-			//rendering objects
-			pointer.generate();
-			renderer.render(*pointer.model, GL_LINES);
-			
-			
-			int pointerCommand = pointer.controls();
-			if (pointerCommand != 0) {
-				terrainModel = terrain.raiseVertices(&pointer, loader, pointerCommand);
-			}
-
-			terrain.generate();	// rendering terrain
-			renderer.render(terrainModel, GL_TRIANGLES);
-
-			
-			// finishing frame
+			// closing frame
 			glfwSwapBuffers(window);
 			glfwPollEvents();	
 		}
@@ -249,15 +216,9 @@ class MainGameLoop {
 
 int main() {
 	
-	// initializing the program
 	MainGameLoop main;
 	main.start();
 
-}
-
-
-void sphereCollisionResponse(Sphere *s1, Sphere *s2) {
-	std::cout << "collision detected\n";
 }
 
 
@@ -274,6 +235,7 @@ void processInput(GLFWwindow *window, unsigned int program) {
 }	
 
 // creates vertices for the sphere
+// TODO: put this in the sphere class
 int createSphere(float vertices[], int stackCount, int sectorCount) {
         int vertex = 0;
 

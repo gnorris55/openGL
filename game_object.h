@@ -1,44 +1,55 @@
-#ifndef LIGHT_H
-#define LIGHT_H
+#ifndef GAME_OBJECT_H
+#define GAME_OBJECT_H
 
 #include "raw_model.h"
 #include "shader.h"
 
-class Light {
+
+
+class GameObject {
+
 
 	public:
 
 	Shader *program;
-	RawModel *rawModel;
 	GLFWwindow *window;
+	RawModel *rawModel;
 	Renderer renderer;
 
-	glm::vec3 displacement = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 color;
+	glm::vec3 displacement;
 
-	Light(Shader *program, Renderer renderer, glm::vec3 displacement, glm::vec3 color, RawModel *model, GLFWwindow *window) {
+	GameObject(Shader *program, GLFWwindow *window, Renderer renderer, glm::vec3 position, glm::vec3 color, RawModel *rawModel) {
 		this->program = program;
-		this->rawModel = model;
-		this->window = window;
-		this->displacement = displacement;
-		this->color = color;
+                this->window = window;
+		this->rawModel = rawModel;
 		this->renderer = renderer;
+		this->color = color;
+                displacement = position;
+
 	}
 	
-	
-	void render() {
-		
+
+	//sets up uniforms for lighting, textures, etc...
+	void render(glm::vec3 lightPosition, glm::vec3 lightColor, glm::vec3 viewPos) {
+
 		glm::mat4 model = glm::mat4(1.0f);
-		
 		model = glm::translate(model, displacement);
-		glUniform4fv(glGetUniformLocation(program->ID, "color"), 1, glm::value_ptr(color));
+
                 glUniformMatrix4fv(glGetUniformLocation(program->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+                glUniform3fv(glGetUniformLocation(program->ID, "objectColor"), 1, glm::value_ptr(color));
+                glUniform3fv(glGetUniformLocation(program->ID, "lightColor"), 1, glm::value_ptr(lightColor));
+                glUniform3fv(glGetUniformLocation(program->ID, "lightPos"), 1, glm::value_ptr(lightPosition));
+                glUniform3fv(glGetUniformLocation(program->ID, "viewPos"), 1, glm::value_ptr(viewPos));
 
 		renderer.render(*rawModel, GL_TRIANGLES);
 
 	}
+
+
+
 	void controls() {
-		const float speed = 0.05f;
+                const float speed = 0.05f;
                 if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
                         displacement.y += speed;
                 if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -47,15 +58,11 @@ class Light {
                         displacement.x -= speed;
                 if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
                         displacement.x += speed;
-		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+                if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
                         displacement.z -= speed;
                 if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
                         displacement.z += speed;
-
-	}
-
-
+        }
 };
-
 
 #endif
