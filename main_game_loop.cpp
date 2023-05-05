@@ -18,7 +18,7 @@
 #include "rectangle.h"
 #include "shader.h"
 #include "raw_model.h"
-#include "terrain.h" //blocked until normals can be added
+#include "terrain.h" 
 #include "physics_manager.h"
 #include "light.h"
 #include "game_object.h"
@@ -30,9 +30,10 @@ const unsigned int SCR_HEIGHT = 600;
 
 // declaring functions
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+RawModel createSphere(float vertices[], float normals[], int stackCount, int sectorCount, Loader loader);
+glm::vec3 calculateNormals(glm::vec3 vectorA, glm::vec3 vectorB, glm::vec3 vectorC);
 void processInput(GLFWwindow *window, unsigned int program);
 void checkCompileErrors(unsigned int shader, std::string type);
-int createSphere(float vertices[], int stackCount, int sectorCount);
 void vertexToElement(float vertices[], int *vertex,  glm::vec3 vector);
 
 
@@ -73,9 +74,11 @@ class MainGameLoop {
 		
 		Shader programShader = Shader("vertex_shader.vs", "fragment_shader.fs");
 		Shader lightingShader = Shader("lighting_vertex_shader.vs", "lighting_fragment_shader.fs");
-
-		float sphereVertices[100000];
-	       	int sphereVerticesNumber = createSphere(sphereVertices, 16, 16);	
+		
+		unsigned int stackCount = 65;
+		unsigned int sectorCount = 65;
+		float sphereVertices[(stackCount*sectorCount)*18];
+		float sphereNormals[(stackCount*sectorCount)*18];
 
 		float rectangleVertices[] = {
 			    -0.5f, -0.5f, -0.5f,
@@ -173,7 +176,9 @@ class MainGameLoop {
 
 		// creatign game objects and terrain
 		RawModel cube = loader.loadToVAO(rectangleVertices, cubeNormals, sizeof(rectangleVertices));
-		GameObject cubeObject = GameObject(&programShader, window, renderer, glm::vec3(5.0f, 5.0f, 0.0f), glm::vec3(0.5, 0.5, 0.5), &cube);
+		RawModel sphere = createSphere(sphereVertices, sphereNormals, stackCount, sectorCount, loader);
+
+		GameObject sphereObject = GameObject(&programShader, window, renderer, glm::vec3(5.0f, 5.0f, 0.0f), glm::vec3(0.5, 0.5, 0.5), &sphere);
 		Terrain terrain = Terrain(&programShader, renderer, 0, 0, glm::vec3(0.0f, 0.80f, 0.48f));
 		RawModel terrainModel = terrain.generateTerrain(loader);		
 
@@ -203,7 +208,7 @@ class MainGameLoop {
 			camera.define(programShader.ID);
 
 			terrain.render(&terrainModel, lightCube.displacement, lightCube.color, camera.displacement);	
-			cubeObject.render(lightCube.displacement, lightCube.color, camera.displacement);
+			sphereObject.render(lightCube.displacement, lightCube.color, camera.displacement);
 			
 			// closing frame
 			glfwSwapBuffers(window);
@@ -236,9 +241,9 @@ void processInput(GLFWwindow *window, unsigned int program) {
 
 // creates vertices for the sphere
 // TODO: put this in the sphere class
-int createSphere(float vertices[], int stackCount, int sectorCount) {
+RawModel createSphere(float vertices[], float normals[], int stackCount, int sectorCount, Loader loader) {
         int vertex = 0;
-
+	int normalsVertex = 0;
         glm::vec3 points[100][100];
         float x, y, z, xy;
         float sectorStep = 2 * PI / sectorCount;
@@ -266,13 +271,28 @@ int createSphere(float vertices[], int stackCount, int sectorCount) {
                         vertexToElement(vertices, &vertex, points[i][j]);
                         vertexToElement(vertices, &vertex, points[i+1][j]);
                         vertexToElement(vertices, &vertex, points[i][j+1]);
+
+			glm::vec3 normalVec = calculateNormals(points[i][j], points[i][j+1], points[i+1][j]);
+                        glm::vec3 scalar = glm::vec3(-1.0f, -1.0f, -1.0f);
+                        normalVec *= scalar;
+                        vertexToElement(normals, &normalsVertex, normalVec);
+                        vertexToElement(normals, &normalsVertex, normalVec);
+                        vertexToElement(normals, &normalsVertex, normalVec);
+
                         vertexToElement(vertices, &vertex, points[i][j+1]);
                         vertexToElement(vertices, &vertex, points[i+1][j]);
                         vertexToElement(vertices, &vertex, points[i+1][j+1]);
+
+			normalVec = calculateNormals(points[i][j+1], points[i+1][j+1], points[i+1][j]);
+                        normalVec *= scalar;
+                        vertexToElement(normals, &normalsVertex, normalVec);
+                        vertexToElement(normals, &normalsVertex, normalVec);
+                        vertexToElement(normals, &normalsVertex, normalVec);
+
                 }
         }
 
-        return vertex;
+        return loader.loadToVAO(vertices, normals, normalsVertex*sizeof(float));
 }
 
 void vertexToElement(float vertices[], int *vertex,  glm::vec3 vector) {
@@ -280,5 +300,10 @@ void vertexToElement(float vertices[], int *vertex,  glm::vec3 vector) {
         vertices[*vertex+1] = vector.y;
         vertices[*vertex+2] = vector.z;
         *vertex += 3;
+}
+glm::vec3 calculateNormals(glm::vec3 vectorA, glm::vec3 vectorB, glm::vec3 vectorC) {
+        //(B-A)x(C-A)
+        return glm::cross(vectorB - vectorA, vectorC - vectorA);
+
 }
 
