@@ -75,8 +75,8 @@ class MainGameLoop {
 		Shader programShader = Shader("vertex_shader.vs", "fragment_shader.fs");
 		Shader lightingShader = Shader("lighting_vertex_shader.vs", "lighting_fragment_shader.fs");
 		
-		unsigned int stackCount = 65;
-		unsigned int sectorCount = 65;
+		unsigned int stackCount = 16;
+		unsigned int sectorCount = 16;
 		float sphereVertices[(stackCount*sectorCount)*18];
 		float sphereNormals[(stackCount*sectorCount)*18];
 
@@ -173,20 +173,20 @@ class MainGameLoop {
 		Loader loader;
 		Renderer renderer;
 
-
 		// creatign game objects and terrain
 		RawModel cube = loader.loadToVAO(rectangleVertices, cubeNormals, sizeof(rectangleVertices));
 		RawModel sphere = createSphere(sphereVertices, sphereNormals, stackCount, sectorCount, loader);
 
-		GameObject sphereObject = GameObject(&programShader, window, renderer, glm::vec3(5.0f, 5.0f, 0.0f), glm::vec3(0.5, 0.5, 0.5), &sphere);
-		Terrain terrain = Terrain(&programShader, renderer, 0, 0, glm::vec3(0.0f, 0.80f, 0.48f));
-		RawModel terrainModel = terrain.generateTerrain(loader);		
+		SphereObject sphereObject = SphereObject(1 ,&programShader, window, renderer, glm::vec3(5.0f, 5.0f, 35.0f), glm::vec3(0.5, 0.5, 0.5), &sphere);
+		Terrain<128> terrain = Terrain<128>(&programShader, renderer, 0, 0, glm::vec3(0.0f, 0.80f, 0.48f));
+		RawModel terrainModel = terrain.generateTerrain(loader);
 
 		// creating camera and light(s)
-		Light lightCube = Light(&lightingShader, renderer, glm::vec3(0.0f, 5.0f, 2.0f), glm::vec3(0.7f, 0.5f, 0.3f), &cube, window);
-		Camera camera = Camera(glm::vec3(0.0f, -7.0f, -20.0f), 20.0f);
+		Light lightCube = Light(&lightingShader, renderer, glm::vec3(-2.0f, 40.0f, 0.0f), glm::vec3(0.7f, 0.5f, 0.3f), &cube, window);
+		Camera camera = Camera(glm::vec3(0.0f, 0.0f, -60.0f),20.0f);
 		
 		glEnable(GL_DEPTH_TEST);
+		//glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 
 		while (!glfwWindowShouldClose(window)) {
 			
@@ -195,17 +195,22 @@ class MainGameLoop {
 			
 			// input
 			processInput(window, programShader.ID);
-			lightCube.controls();
-			
+			sphereObject.controls();
 
 			//rendering light source
 			glUseProgram(lightingShader.ID);
 			camera.define(lightingShader.ID);	
 			lightCube.render();
+			
 		
 			// rendering gameObjects and terrain	
 			glUseProgram(programShader.ID);
 			camera.define(programShader.ID);
+
+			//float height = terrain.getHeight(sphereObject.displacement.x, sphereObject.displacement.z);
+			//std::cout << height << "\n";
+			//sphereObject.displacement.y = height+1;
+			terrain.setSphere(&sphereObject);
 
 			terrain.render(&terrainModel, lightCube.displacement, lightCube.color, camera.displacement);	
 			sphereObject.render(lightCube.displacement, lightCube.color, camera.displacement);

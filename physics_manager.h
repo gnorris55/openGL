@@ -1,15 +1,23 @@
 #ifndef PHYSICS_MANAGER_H
 #define PHYSICS_MANAGER_H
 
-#include "sphere.h"
 #include "rectangle.h"
+#include "game_object.h"
+#include "terrain.h"
 
 
 class PhysicsManager {
 
 	public:
+	
+		/*
+	int checkSphereTerrainCollision(SphereObject *sphere, Terrain terrain) {
+		
+	}
+	*/
 
-	int checkSphereCollision(Sphere sphere1, Sphere sphere2) {
+
+	int checkSphereCollision(SphereObject sphere1, SphereObject sphere2) {
 		// calculate distance from center of sphere 1 to distance of centre of sphere2
 		float xDistance = sphere1.displacement.x - sphere2.displacement.x;
 		float yDistance = sphere1.displacement.y - sphere2.displacement.y;
@@ -22,16 +30,12 @@ class PhysicsManager {
 
 		return 0;
 	}
-
+	/*
 	int checkSphereOnRectangleCollision(Sphere sphere, Rectangle rectangle) {
 		float xDistance = abs(sphere.displacement.x - rectangle.displacement.x);
 		float yDistance = abs(sphere.displacement.y - rectangle.displacement.y);
 		float zDistance = abs(sphere.displacement.z - rectangle.displacement.z);
 
-		//std::cout << xDistance << "\n";
-		//std::cout << yDistance << "\n";
-		//std::cout << zDistance << "\n";
-		
 		if (xDistance >= ((rectangle.xScale/2) + sphere.radius) ||
 		    yDistance >= ((rectangle.yScale/2) + sphere.radius) ||
 		    zDistance >= ((rectangle.zScale/2) + sphere.radius))
@@ -52,10 +56,7 @@ class PhysicsManager {
 		} else
 			return 0;
 	}
-
-	void sphereCollisionResponse(Sphere *s1, Sphere *s2) {
-        	std::cout << "collision detected\n";
-	}
+	*/
 
 };
 
