@@ -176,18 +176,23 @@ class MainGameLoop {
 		// creatign game objects and terrain
 		RawModel cube = loader.loadToVAO(rectangleVertices, cubeNormals, sizeof(rectangleVertices));
 		RawModel sphere = createSphere(sphereVertices, sphereNormals, stackCount, sectorCount, loader);
-
-		SphereObject sphereObject = SphereObject(1 ,&programShader, window, renderer, glm::vec3(5.0f, 5.0f, 35.0f), glm::vec3(0.5, 0.5, 0.5), &sphere);
+		
+		SphereObject sphereObject = SphereObject(0.43f, &programShader, window, renderer, glm::vec3(5.0f, 10.0f, 35.0f), glm::vec3(1.0, 1.0, 1.0), &sphere);
 		Terrain<128> terrain = Terrain<128>(&programShader, renderer, 0, 0, glm::vec3(0.0f, 0.80f, 0.48f));
 		RawModel terrainModel = terrain.generateTerrain(loader);
+		Editor pointer = Editor(&programShader, glm::vec3(0.0f,5.0f,0.0f), 1, window, &cube);
 
 		// creating camera and light(s)
-		Light lightCube = Light(&lightingShader, renderer, glm::vec3(-2.0f, 40.0f, 0.0f), glm::vec3(0.7f, 0.5f, 0.3f), &cube, window);
-		Camera camera = Camera(glm::vec3(0.0f, 0.0f, -60.0f),20.0f);
-		
+		Light lightCube = Light(&lightingShader, renderer, glm::vec3(-2.0f, 40.0f, 0.0f), glm::vec3(0.9f, 0.7f, 0.7f), &cube, window);
+		Camera camera = Camera(glm::vec3(-15.0f, -5.0f, -60.0f), 5.0f, 45.0f);
 		glEnable(GL_DEPTH_TEST);
 		//glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-
+		
+		
+		float terrainHeight;
+		float angle = 45.0f;
+		float velocity = 20.0f;
+		sphereObject.collision=true;
 		while (!glfwWindowShouldClose(window)) {
 			
 			//preparing frame
@@ -195,25 +200,38 @@ class MainGameLoop {
 			
 			// input
 			processInput(window, programShader.ID);
-			sphereObject.controls();
 
 			//rendering light source
 			glUseProgram(lightingShader.ID);
 			camera.define(lightingShader.ID);	
 			lightCube.render();
-			
-		
+				
 			// rendering gameObjects and terrain	
 			glUseProgram(programShader.ID);
 			camera.define(programShader.ID);
 
-			//float height = terrain.getHeight(sphereObject.displacement.x, sphereObject.displacement.z);
-			//std::cout << height << "\n";
-			//sphereObject.displacement.y = height+1;
-			terrain.setSphere(&sphereObject);
+			int type = pointer.controls();
+			pointer.generate();
+			renderer.render(cube, GL_LINES);
 
-			terrain.render(&terrainModel, lightCube.displacement, lightCube.color, camera.displacement);	
+			//TODO: implement in physics manager ---
+			if (type == 1) {
+				terrainModel = terrain.raiseVertices(&pointer, loader, 1);
+			} else if (type == -1) {
+				sphereObject.collision = false;
+				sphereObject.setTime();
+			}
+			if (sphereObject.collision == false) {
+				sphereObject.projectileMotion(angle, velocity);
+				physicsManager.sphereTerrainCollisionDetection(&sphereObject, 
+						       terrain.getHeight(sphereObject.displacement.x, sphereObject.displacement.z, &terrainHeight), 
+						       terrainHeight, &angle, &velocity);
+
+			//----
+			}
+
 			sphereObject.render(lightCube.displacement, lightCube.color, camera.displacement);
+			terrain.render(&terrainModel, lightCube.displacement, lightCube.color, camera.displacement);	
 			
 			// closing frame
 			glfwSwapBuffers(window);
@@ -271,7 +289,6 @@ RawModel createSphere(float vertices[], float normals[], int stackCount, int sec
         }
 
         for ( int i = 0; i < stackCount; ++i) {
-                //std::cout << "\n";
                 for ( int j = 0; j < sectorCount; ++j) {
                         vertexToElement(vertices, &vertex, points[i][j]);
                         vertexToElement(vertices, &vertex, points[i+1][j]);

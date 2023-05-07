@@ -26,7 +26,9 @@ class Terrain {
 
 	float worldX;
 	float worldZ;
-
+	
+	// main functions
+	
 	Terrain(Shader *program, Renderer renderer, int gridX, int gridZ, glm::vec3 color) {
 		this->program = program;
 		this->renderer = renderer;
@@ -49,29 +51,18 @@ class Terrain {
 	}
 
 	RawModel generateTerrain(Loader loader) {
-		int count = VERTEX_COUNT*VERTEX_COUNT;
-		int posX, posZ;
-		float posY;
-		int vertexPointer = 0;
-		int squarePoints = 18;
-		float vertices[count*SQUARE_POINTS];
-		float normals[count*SQUARE_POINTS];
+		int count = VERTEX_COUNT*VERTEX_COUNT*SQUARE_POINTS;
+		float vertices[count];
+		float normals[count];
 
-		for (int i = 0; i < VERTEX_COUNT; i++) {
-			for (int j = 0; j < VERTEX_COUNT; j++) {
-				posX = (float)j/((float) VERTEX_COUNT - 1) * SIZE;
-				posY = 7*sin(glm::radians((float)i * 4.0f));
-				posZ = (float)i/((float) VERTEX_COUNT - 1) * SIZE;
-				points[j][i] = glm::vec3(posX, posY, posZ);
-				heightMap[j][i] = posY;
-			}
-			
-		}
+		setPoints();
 		mapVertices(vertices, normals);
 
 		return loader.loadToVAO(vertices, normals, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
 	}
+	
 
+	//side methods
 	RawModel raiseVertices(Editor *pointer, Loader loader, int type) {
 		for (int i = 0; i < VERTEX_COUNT; i++) {
 			for (int j = 0; j < VERTEX_COUNT; j++) {
@@ -87,7 +78,7 @@ class Terrain {
 					float intensity = (pointer->radius-totalDistance)/pointer->radius;
 					
 					points[i][j].y += (type)*(0.10f * intensity);
-					//std::cout << posX << ", " <<  posZ << "\n";
+					heightMap[i][j] += (type)*(0.10f * intensity);
 				}
 
 			}
@@ -104,15 +95,17 @@ class Terrain {
 
 		float dotProduct = glm::dot(normal, sphereNormal);
 		dotProduct *= (180/3.14);
-		std::cout << dotProduct << "\n";
 		sphereObject->rotation = dotProduct;
 		//TODO: make sure that ball is always above terrain mesh	
 
                 sphereObject->displacement.y = height+1;
 
 	}
-
+	
+	//assigns a height variable depending on the x and z coordinates and returns the normal of the triangle that those coordinates are in
 	glm::vec3 getHeight(float x, float z, float *height) {
+		
+		
 		float posX = x - worldX;
                 float posZ = z - worldZ;
 		float gridSquareSize = SIZE / ((float)VERTEX_COUNT - 1);
@@ -123,31 +116,22 @@ class Terrain {
 		float xCoord = (fmodf(posX,gridSquareSize)/gridSquareSize);
 		float zCoord = (fmodf(posZ,gridSquareSize)/gridSquareSize);
 		if (xCoord <= (1-zCoord)) {
-			std::cout << "in top left triangle\n";
-			*height = barryCentric(	glm::vec3(0, heightMap[gridX][gridZ], 0), 
-				     		glm::vec3(1, heightMap[gridX+1][gridZ], 0),
-				     		glm::vec3(0, heightMap[gridX][gridZ+1], 1),
-				     		glm::vec2(xCoord, zCoord));
+			*height = barryCentric(glm::vec3(0, heightMap[gridX][gridZ], 0), 
+				     	glm::vec3(1, heightMap[gridX+1][gridZ], 0),
+				     	glm::vec3(0, heightMap[gridX][gridZ+1], 1),
+				     	glm::vec2(xCoord, zCoord));
+
 			return calculateNormals(points[gridX][gridZ], points[gridX+1][gridZ], points[gridX][gridZ+1]);			
 		} else {
-			std::cout << "in bottom right triangle\n";
-			std::cout << heightMap[gridX][gridZ] << "\n";
-			*height = barryCentric(	glm::vec3(1, heightMap[gridX+1][gridZ], 0), 
-				     		glm::vec3(1, heightMap[gridX+1][gridZ+1], 1),
-				     		glm::vec3(0, heightMap[gridX][gridZ+1], 1),
-				     		glm::vec2(xCoord, zCoord));
+			*height = barryCentric(glm::vec3(1, heightMap[gridX+1][gridZ], 0), 
+				     	glm::vec3(1, heightMap[gridX+1][gridZ+1], 1),
+				     	glm::vec3(0, heightMap[gridX][gridZ+1], 1),
+				    	glm::vec2(xCoord, zCoord));
+
 			return calculateNormals(points[gridX+1][gridZ], points[gridX+1][gridZ+1], points[gridX][gridZ]);			
 		}
 
 		
-	}
-
-	float barryCentric(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec2 pos) {
-		float det = (p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z);
-		float l1 = ((p2.z - p3.z) * (pos.x - p3.x) + (p3.x - p2.x) * (pos.y - p3.z)) / det;
-		float l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det;
-		float l3 = 1.0f - l1 - l2;
-		return l1 * p1.y + l2 * p2.y + l3 * p3.y;
 	}
 	
 	RawModel updateVertices(Loader loader) {
@@ -158,6 +142,35 @@ class Terrain {
 		return loader.loadToVAO(vertices, normals, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
 	}
 			
+
+	void printPoints() {
+		for (int i = 0; i < VERTEX_COUNT; i++) {
+			for (int j = 0; j < VERTEX_COUNT; j++) {
+				glm::vec3 point = points[i][j];
+				std::cout << "["<< point.x << ", " << point.y << ", " << point.z << "]\n";
+			}
+		}
+	}
+
+
+	private:
+
+	// creates the beginning layout for the terrain raw model
+	void setPoints() {
+		float posX, posY, posZ;
+		for (int i = 0; i < VERTEX_COUNT; i++) {
+                        for (int j = 0; j < VERTEX_COUNT; j++) {
+                                posX = (float)j/((float) VERTEX_COUNT - 1) * SIZE;
+                                posY = 0;
+                                posZ = (float)i/((float) VERTEX_COUNT - 1) * SIZE;
+                                points[j][i] = glm::vec3(posX, posY, posZ);
+                                heightMap[j][i] = posY;
+                        }
+
+                }
+
+	}
+	
 	void mapVertices(float vertices[], float normals[]) {
 		int vertex = 0;
 		int normalsVertex = 0;
@@ -193,19 +206,6 @@ class Terrain {
 
 		}
 	}
-
-	void printPoints() {
-		for (int i = 0; i < VERTEX_COUNT; i++) {
-			for (int j = 0; j < VERTEX_COUNT; j++) {
-				glm::vec3 point = points[i][j];
-				std::cout << "["<< point.x << ", " << point.y << ", " << point.z << "]\n";
-			}
-		}
-	}
-
-
-	private:
-
 	void vertexToElement(float vertices[], int *vertex,  glm::vec3 vector) {
 		vertices[*vertex] = vector.x;
 		vertices[*vertex+1] = vector.y;
@@ -218,8 +218,17 @@ class Terrain {
 		return glm::cross(vectorB - vectorA, vectorC - vectorA);
 
 	}
+	
+	float barryCentric(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec2 pos) {
+		float det = (p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z);
+		float l1 = ((p2.z - p3.z) * (pos.x - p3.x) + (p3.x - p2.x) * (pos.y - p3.z)) / det;
+		float l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det;
+		float l3 = 1.0f - l1 - l2;
+		return l1 * p1.y + l2 * p2.y + l3 * p3.y;
+	}
 
 };
+
 
 
 #endif

@@ -4,17 +4,72 @@
 #include "rectangle.h"
 #include "game_object.h"
 #include "terrain.h"
+#include <algorithm>
 
 
 class PhysicsManager {
 
 	public:
 	
-		/*
-	int checkSphereTerrainCollision(SphereObject *sphere, Terrain terrain) {
+	void sphereTerrainCollisionDetection(SphereObject *sphere, glm::vec3 triangleNormal, float triangleHeight, float *angle, float *velocity) {
 		
+		if ((sphere->displacement.y - triangleHeight) <= (sphere->radius) && (glfwGetTime()-sphere->startTime) > 0.1f) {
+			sphere->collision = true;
+			sphereTerrainCollisionResponse(sphere, triangleNormal, triangleHeight, angle, velocity);
+		}
 	}
-	*/
+
+	void sphereTerrainCollisionResponse(SphereObject *sphere, glm::vec3 normalVector, float triangleHeight, float *angle, float *velocity) {
+		
+		
+		glm::vec3 velocityVector = sphere->velocityVector;
+		float dir = 1;
+		std::cout << normalVector.x << ", " << normalVector.y << ", " << normalVector.y << "\n";
+		if (((normalVector.x != 0) && velocityVector.z < 0) || velocityVector.z > 0) {
+			std::cout << "alrighty\n";
+			dir = -1;
+		}
+		if (velocityVector.y > 0) {
+			normalVector *= glm::vec3(-1.0f, -1.0f, -1.0f);
+		}
+
+		if (glm::length(velocityVector) > 1.0f) {
+
+			float dot = glm::dot(glm::normalize(velocityVector), glm::normalize(normalVector));
+			if (dot > 1) {dot = 0.99;}
+			if (dot < -1) {dot = -0.99f;}
+			std::cout << "dot product: " << dot << "\n";
+			float angleOfCollision = acos(dot)*180/3.14;
+			std::cout << "angle: " << 90-angleOfCollision << "\n";
+			//printCollisionStats(velocityVector, sphere->displacement, normalVector, triangleHeight, angleOfCollision);
+			sphere->startingPosition += sphere->flightVec;
+			sphere->setTime();
+			sphere->flightVec = glm::vec3(0.0f, 0.0f, 0.0f);
+			*angle = 90 - angleOfCollision;
+
+			if (glm::length(velocityVector) > 18) {
+				*velocity = 15.0f*0.72*dir;
+			}	else {
+				*velocity = glm::length(velocityVector)*0.6*dir;
+			}
+			std::cout << "output velocity: " << *velocity << " output angle: " << *angle << "\n";
+			sphere->collision = false;
+		}
+
+	}
+
+	void printCollisionStats(glm::vec3 velocityVector, glm::vec3 displacement, glm::vec3 normalVector, float height, float angleOfCollision) {
+		std::cout << "collision response\n";
+                std::cout << "velocity vector: "<< velocityVector.x << ", " << velocityVector.y << ", " << velocityVector.z << "\n";
+                std::cout << "sphere displacement: "<< displacement.x << ", " << displacement.y << ", " << displacement.z << "\n";
+                std::cout << "normal vector: "<< normalVector.x << ", " << normalVector.y << ", " << normalVector.z << "\n";
+                std::cout << "height: " << height << "\n";
+		//std::cout << "angle of collision: " << 90 - acos(angleOfCollision)*(180/3.14) << "\n";
+                std::cout << "current velocity: " << glm::length(velocityVector) << "\n";
+                std::cout << "starting velocity: " << glm::length(glm::vec3(0.0f, 20*sin(glm::radians(45.0f)),velocityVector.z)) << "\n";                
+
+	}
+
 
 
 	int checkSphereCollision(SphereObject sphere1, SphereObject sphere2) {
@@ -24,7 +79,6 @@ class PhysicsManager {
 		float zDistance = sphere1.displacement.z - sphere2.displacement.z;
 
 		float distance = sqrt(pow(xDistance, 2) + pow(yDistance, 2) + pow(zDistance, 2));
-		//std::cout << distance << "\n";
 		if (distance <= sphere1.radius + sphere2.radius)
 			return 1;
 
