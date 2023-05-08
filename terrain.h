@@ -60,10 +60,57 @@ class Terrain {
 
 		return loader.loadToVAO(vertices, normals, sizeof(vertices) - ((VERTEX_COUNT*sizeof(float)*SQUARE_POINTS)*2) + (sizeof(float)*SQUARE_POINTS));
 	}
-	
 
-	//side methods
-	RawModel raiseVertices(Editor *pointer, Loader loader, int type) {
+	void edit(Editor *editor, RawModel *terrainModel,  Loader loader) {
+		
+		// setting editor height depending on terrain
+		float pointerHeight;
+		getHeight(editor->displacement.x, editor->displacement.z, &pointerHeight);
+                editor->displacement.y = pointerHeight;
+		
+		// altering terrain
+		if (editor->mode == 1) {
+			int command = editor->controls();
+			*terrainModel = alterVertices(editor, loader, command);
+		}
+			
+	}
+	
+	//assigns a height variable depending on the x and z coordinates and returns the normal of the triangle that those coordinates are in
+	glm::vec3 getHeight(float x, float z, float *height) {	
+		
+		float posX = x - worldX;
+                float posZ = z - worldZ;
+		float gridSquareSize = SIZE / ((float)VERTEX_COUNT - 1);
+		int gridX = (int)floor(posX/gridSquareSize);
+		int gridZ = (int)floor(posZ/gridSquareSize);
+		if (gridX >= VERTEX_COUNT - 1 || gridZ >= VERTEX_COUNT - 1 || gridX < 0 || gridZ < 0)
+			return glm::vec3(0.0f, 0.0f, 0.0f);
+		float xCoord = (fmodf(posX,gridSquareSize)/gridSquareSize);
+		float zCoord = (fmodf(posZ,gridSquareSize)/gridSquareSize);
+		if (xCoord <= (1-zCoord)) {
+			*height = barryCentric(glm::vec3(0, heightMap[gridX][gridZ], 0), 
+				     	glm::vec3(1, heightMap[gridX+1][gridZ], 0),
+				     	glm::vec3(0, heightMap[gridX][gridZ+1], 1),
+				     	glm::vec2(xCoord, zCoord));
+
+			return calculateNormals(points[gridX][gridZ], points[gridX+1][gridZ], points[gridX][gridZ+1]);			
+		} else {
+			*height = barryCentric(glm::vec3(1, heightMap[gridX+1][gridZ], 0), 
+				     	glm::vec3(1, heightMap[gridX+1][gridZ+1], 1),
+				     	glm::vec3(0, heightMap[gridX][gridZ+1], 1),
+				    	glm::vec2(xCoord, zCoord));
+
+			return calculateNormals(points[gridX+1][gridZ], points[gridX+1][gridZ+1], points[gridX][gridZ]);			
+		}
+
+		
+	}
+
+	
+	private:
+
+	RawModel alterVertices(Editor *pointer, Loader loader, int type) {
 		for (int i = 0; i < VERTEX_COUNT; i++) {
 			for (int j = 0; j < VERTEX_COUNT; j++) {
 				glm::vec3 point = points[i][j];
@@ -102,37 +149,6 @@ class Terrain {
 
 	}
 	
-	//assigns a height variable depending on the x and z coordinates and returns the normal of the triangle that those coordinates are in
-	glm::vec3 getHeight(float x, float z, float *height) {
-		
-		
-		float posX = x - worldX;
-                float posZ = z - worldZ;
-		float gridSquareSize = SIZE / ((float)VERTEX_COUNT - 1);
-		int gridX = (int)floor(posX/gridSquareSize);
-		int gridZ = (int)floor(posZ/gridSquareSize);
-		if (gridX >= VERTEX_COUNT - 1 || gridZ >= VERTEX_COUNT - 1 || gridX < 0 || gridZ < 0)
-			return glm::vec3(0.0f, 0.0f, 0.0f);
-		float xCoord = (fmodf(posX,gridSquareSize)/gridSquareSize);
-		float zCoord = (fmodf(posZ,gridSquareSize)/gridSquareSize);
-		if (xCoord <= (1-zCoord)) {
-			*height = barryCentric(glm::vec3(0, heightMap[gridX][gridZ], 0), 
-				     	glm::vec3(1, heightMap[gridX+1][gridZ], 0),
-				     	glm::vec3(0, heightMap[gridX][gridZ+1], 1),
-				     	glm::vec2(xCoord, zCoord));
-
-			return calculateNormals(points[gridX][gridZ], points[gridX+1][gridZ], points[gridX][gridZ+1]);			
-		} else {
-			*height = barryCentric(glm::vec3(1, heightMap[gridX+1][gridZ], 0), 
-				     	glm::vec3(1, heightMap[gridX+1][gridZ+1], 1),
-				     	glm::vec3(0, heightMap[gridX][gridZ+1], 1),
-				    	glm::vec2(xCoord, zCoord));
-
-			return calculateNormals(points[gridX+1][gridZ], points[gridX+1][gridZ+1], points[gridX][gridZ]);			
-		}
-
-		
-	}
 	
 	RawModel updateVertices(Loader loader) {
 		float vertices[VERTEX_COUNT*VERTEX_COUNT*SQUARE_POINTS];
@@ -151,9 +167,6 @@ class Terrain {
 			}
 		}
 	}
-
-
-	private:
 
 	// creates the beginning layout for the terrain raw model
 	void setPoints() {
@@ -215,6 +228,7 @@ class Terrain {
 
 	glm::vec3 calculateNormals(glm::vec3 vectorA, glm::vec3 vectorB, glm::vec3 vectorC) {
 		//(B-A)x(C-A)
+		//
 		return glm::cross(vectorB - vectorA, vectorC - vectorA);
 
 	}

@@ -10,18 +10,42 @@
 class PhysicsManager {
 
 	public:
-	
-	void sphereTerrainCollisionDetection(SphereObject *sphere, glm::vec3 triangleNormal, float triangleHeight, float *angle, float *velocity) {
-		
-		if ((sphere->displacement.y - triangleHeight) <= (sphere->radius) && (glfwGetTime()-sphere->startTime) > 0.1f) {
-			sphere->collision = true;
-			sphereTerrainCollisionResponse(sphere, triangleNormal, triangleHeight, angle, velocity);
+
+	void terrainSphereManager(SphereObject *sphere, Terrain<128> *terrain, float angle, float velocity) {
+		// if collision is not detected, move sphere and check for collision
+		if (sphere->collision == false) {
+			sphere->projectileMotion(angle, velocity);
+
+			//height and normal of the current terrain triangle under sphere
+			float terrainHeight = 0;
+			glm::vec3 terrainNormal = terrain->getHeight(sphere->displacement.x, sphere->displacement.z, &terrainHeight);
+
+                	if (sphereTerrainCollisionDetection(sphere, terrainNormal, terrainHeight) == 1)
+				sphereTerrainCollisionResponse(sphere, terrainNormal, terrainHeight, &angle, &velocity);
 		}
 	}
 
+
+
+
+
+	private:
+	
+	//TODO:
+	// SPHERE TERRAIN PHYSICS============================
+
+	int sphereTerrainCollisionDetection(SphereObject *sphere, glm::vec3 triangleNormal, float triangleHeight) {
+		
+		if ((sphere->displacement.y - triangleHeight) <= (sphere->radius) && (glfwGetTime()-sphere->startTime) > 0.1f) {
+			sphere->collision = true;
+			return 1;
+		}
+		return 0;
+	}
+
 	void sphereTerrainCollisionResponse(SphereObject *sphere, glm::vec3 normalVector, float triangleHeight, float *angle, float *velocity) {
-		
-		
+				
+		//TODO: make it work
 		glm::vec3 velocityVector = sphere->velocityVector;
 		float dir = 1;
 		std::cout << normalVector.x << ", " << normalVector.y << ", " << normalVector.y << "\n";
@@ -58,21 +82,11 @@ class PhysicsManager {
 
 	}
 
-	void printCollisionStats(glm::vec3 velocityVector, glm::vec3 displacement, glm::vec3 normalVector, float height, float angleOfCollision) {
-		std::cout << "collision response\n";
-                std::cout << "velocity vector: "<< velocityVector.x << ", " << velocityVector.y << ", " << velocityVector.z << "\n";
-                std::cout << "sphere displacement: "<< displacement.x << ", " << displacement.y << ", " << displacement.z << "\n";
-                std::cout << "normal vector: "<< normalVector.x << ", " << normalVector.y << ", " << normalVector.z << "\n";
-                std::cout << "height: " << height << "\n";
-		//std::cout << "angle of collision: " << 90 - acos(angleOfCollision)*(180/3.14) << "\n";
-                std::cout << "current velocity: " << glm::length(velocityVector) << "\n";
-                std::cout << "starting velocity: " << glm::length(glm::vec3(0.0f, 20*sin(glm::radians(45.0f)),velocityVector.z)) << "\n";                
-
-	}
+	//============================================================================
 
 
 
-	int checkSphereCollision(SphereObject sphere1, SphereObject sphere2) {
+	int sphereCollisionDetection(SphereObject sphere1, SphereObject sphere2) {
 		// calculate distance from center of sphere 1 to distance of centre of sphere2
 		float xDistance = sphere1.displacement.x - sphere2.displacement.x;
 		float yDistance = sphere1.displacement.y - sphere2.displacement.y;
@@ -84,8 +98,8 @@ class PhysicsManager {
 
 		return 0;
 	}
-	/*
-	int checkSphereOnRectangleCollision(Sphere sphere, Rectangle rectangle) {
+	
+	int sphereRectangleCollisionDetection(Sphere sphere, Rectangle rectangle) {
 		float xDistance = abs(sphere.displacement.x - rectangle.displacement.x);
 		float yDistance = abs(sphere.displacement.y - rectangle.displacement.y);
 		float zDistance = abs(sphere.displacement.z - rectangle.displacement.z);
@@ -110,7 +124,7 @@ class PhysicsManager {
 		} else
 			return 0;
 	}
-	*/
+	
 
 };
 

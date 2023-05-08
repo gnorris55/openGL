@@ -79,6 +79,8 @@ class SphereObject: public GameObject {
 	glm::vec3 velocityVector = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	float radius;
+	float angle = 45.0f;
+        float velocity = 20.0f;
 	bool collision = false;
 	float startTime = 0.0f;	
 

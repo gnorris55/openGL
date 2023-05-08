@@ -19,25 +19,26 @@ class Sphere {
 	public:
 
 	Shader *program;
+	Renderer renderer;
 	glm::vec3 displacement;
 	GLFWwindow *window;
-	RawModel *model;
+	RawModel *rawModel;
 
 	float radius;
 	float gravity = -9.8;
 	float velocity = 0.05f;
 	float startTime = 0.0f;
 
-	Sphere(Shader *program, glm::vec3 position, int radius, GLFWwindow *window, RawModel *sphereModel) {
+	Sphere(Shader *program, Renderer renderer, glm::vec3 position, float radius, GLFWwindow *window, RawModel *sphereModel) {
 		this->program = program;
 		this->window = window;
 		this->radius = radius;
 		displacement = position;
-		model = sphereModel;
+		rawModel = sphereModel;
 
 	}
 
-	void generate() {
+	void render() {
 		glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
                 glm::mat4 model = glm::mat4(1.0f);
                 float rotation = glfwGetTime() * 50.0f;
@@ -48,6 +49,7 @@ class Sphere {
 
                 glUniform4fv(glGetUniformLocation(program->ID, "color"), 1, glm::value_ptr(color));
                 glUniformMatrix4fv(glGetUniformLocation(program->ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		renderer.render(*rawModel, GL_LINES);
 	}
 	
 	void controls() {
