@@ -178,13 +178,13 @@ class MainGameLoop {
 		RawModel sphere = createSphere(sphereVertices, sphereNormals, stackCount, sectorCount, loader);
 	
 		// creating objects	
-		SphereObject ball = SphereObject(0.43f, &programShader, window, renderer, glm::vec3(5.0f, 10.0f, 35.0f), glm::vec3(1.0, 1.0, 1.0), &sphere);
-		Terrain<128> terrain = Terrain<128>(&programShader, renderer, 0, 0, glm::vec3(0.0f, 0.80f, 0.48f));
+		SphereObject ball = SphereObject(0.43f, &programShader, window, renderer, glm::vec3(5.0f, 1.0f, 35.0f), glm::vec3(1.0, 1.0, 1.0), &sphere);
+		Terrain<128> terrain = Terrain<128>(&programShader, renderer, 0, 0, glm::vec3(0.0f, 0.90f, 0.48f));
 		RawModel terrainModel = terrain.generateTerrain(loader);
 
 		// creating tools
 		Light lightCube = Light(&lightingShader, renderer, glm::vec3(-2.0f, 40.0f, 0.0f), glm::vec3(0.9f, 0.7f, 0.7f), &cube, window);
-		Camera camera = Camera(glm::vec3(-15.0f, -5.0f, -60.0f), 5.0f, 0.0f);
+		Camera camera = Camera(glm::vec3(-15.0f, -5.0f, -20.0f), 5.0f, 0.0f);
 		Editor editor = Editor(&programShader, renderer, glm::vec3(0.0f,5.0f,0.0f), 10, window, &sphere);
 		
 		glEnable(GL_DEPTH_TEST);
@@ -193,7 +193,7 @@ class MainGameLoop {
 		
 		// angle and velocity values for our ball
 		float angle = 45.0f;
-		float velocity = 20.0f;
+		float velocity = 30.0f;
 		while (!glfwWindowShouldClose(window)) {
 			
 			//preparing frame
@@ -212,7 +212,7 @@ class MainGameLoop {
 
 			// object methods
 			terrain.edit(&editor, &terrainModel, loader);
-			physicsManager.terrainSphereManager(&ball, &terrain, angle, velocity);
+			physicsManager.terrainSphereManager(&ball, &terrain, &angle, &velocity);
 
 			// rendering objects
 			editor.render();

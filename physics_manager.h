@@ -11,17 +11,17 @@ class PhysicsManager {
 
 	public:
 
-	void terrainSphereManager(SphereObject *sphere, Terrain<128> *terrain, float angle, float velocity) {
+	void terrainSphereManager(SphereObject *sphere, Terrain<128> *terrain, float *angle, float *velocity) {
 		// if collision is not detected, move sphere and check for collision
 		if (sphere->collision == false) {
-			sphere->projectileMotion(angle, velocity);
+			sphere->projectileMotion(*angle, *velocity);
 
 			//height and normal of the current terrain triangle under sphere
 			float terrainHeight = 0;
 			glm::vec3 terrainNormal = terrain->getHeight(sphere->displacement.x, sphere->displacement.z, &terrainHeight);
 
                 	if (sphereTerrainCollisionDetection(sphere, terrainNormal, terrainHeight) == 1)
-				sphereTerrainCollisionResponse(sphere, terrainNormal, terrainHeight, &angle, &velocity);
+				sphereTerrainCollisionResponse(sphere, terrainNormal, terrainHeight, angle, velocity);
 		}
 	}
 
@@ -48,7 +48,8 @@ class PhysicsManager {
 		//TODO: make it work
 		glm::vec3 velocityVector = sphere->velocityVector;
 		float dir = 1;
-		std::cout << normalVector.x << ", " << normalVector.y << ", " << normalVector.y << "\n";
+		//std::cout << normalVector.x << ", " << normalVector.y << ", " << normalVector.y << "\n";
+		std::cout << "initial velocity: " << *velocity << "current velocity: " << glm::length(velocityVector) << "\n";
 		if (((normalVector.x != 0) && velocityVector.z < 0) || velocityVector.z > 0) {
 			std::cout << "alrighty\n";
 			dir = -1;
@@ -72,9 +73,9 @@ class PhysicsManager {
 			*angle = 90 - angleOfCollision;
 
 			if (glm::length(velocityVector) > 18) {
-				*velocity = 15.0f*0.72*dir;
+				*velocity = 15.0f*dir;
 			}	else {
-				*velocity = glm::length(velocityVector)*0.6*dir;
+				*velocity = glm::length(velocityVector);
 			}
 			std::cout << "output velocity: " << *velocity << " output angle: " << *angle << "\n";
 			sphere->collision = false;

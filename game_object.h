@@ -9,9 +9,9 @@ class GameObject {
 
 	public:
 
-	float G = -98.1; //dm/s1 
-	float AIR_DENSITY = 26.45f; //kg/m^3 lb/dm^3
-	float DYNAMIC_VISCOSITY = 0.0018;
+	float G = 9.81*2; //dm/s1 
+	float AIR_DENSITY = 2.645f; //kg/m^3 lb/dm^3
+	float DYNAMIC_VISCOSITY = 0.000018;
 
 	Shader *program;
 	GLFWwindow *window;
@@ -79,8 +79,6 @@ class SphereObject: public GameObject {
 	glm::vec3 velocityVector = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	float radius;
-	float angle = 45.0f;
-        float velocity = 20.0f;
 	bool collision = false;
 	float startTime = 0.0f;	
 
@@ -112,10 +110,16 @@ class SphereObject: public GameObject {
 		if (collision == false) {
 			
 			float flightTime = glfwGetTime() - startTime;
-			float drag = glm::length(velocityVector)* mass;
-			float zPosition = (-initialVelocity)*flightTime*cos(glm::radians(angle));
-			float yPosition = abs(initialVelocity)*flightTime*sin(glm::radians(angle)) + (0.5)*mass*G*pow(flightTime, 2);
-			flightVec = glm::vec3(0.0f, yPosition, zPosition);
+
+			float drag = 0.1;
+			float z = -((initialVelocity*cos(glm::radians(angle)) + G)/drag) * (1 - exp(-drag*flightTime));
+			float y = ((drag * initialVelocity*sin(glm::radians(angle)) + G)/pow(drag, 2)) * (1 - exp(-drag*flightTime)) - G*(flightTime/drag);
+			//std::cout << "ZZZZZZZ: " << z << "\n";
+			//std::cout << "YYYYYYY: " << y << "\n";
+			//float zPosition = (-initialVelocity)*flightTime*cos(glm::radians(angle));
+			//std::cout << "z Position: " << zPosition << "\n";
+			//float yPosition = abs(initialVelocity)*flightTime*sin(glm::radians(angle)) - (0.5)*G*pow(flightTime, 2);
+			flightVec = glm::vec3(0.0f, y, z);
 			displacement = startingPosition + flightVec;
 			setVelocityVector(angle, initialVelocity, drag, flightTime);
 		}
@@ -129,12 +133,14 @@ class SphereObject: public GameObject {
 
 	void setVelocityVector(float angle, float initialVelocity, float dragForce, int currTime) {
 		// for drag
-		//float z = -initialVelocity*cos(glm::radians(angle))*exp(-dragForce*currTime);
-		//float y = ((-G/dragForce) + initialVelocity*sin(glm::radians(angle)))*exp(-dragForce*currTime) - (-G/dragForce);
-		float yVelocity = abs(initialVelocity)*sin(glm::radians(angle)) + G*mass*currTime;
+	
+		float z = -initialVelocity*cos(glm::radians(angle))*exp(-dragForce*currTime);
+		float y = ((G/dragForce) + initialVelocity*sin(glm::radians(angle)))*exp(-dragForce*currTime) - (G/dragForce);
+		float yVelocity = abs(initialVelocity)*sin(glm::radians(angle)) - G*currTime;
 		float zVelocity = -initialVelocity*cos(glm::radians(angle));
-		//std::cout << "y velocity: " << yVelocity << "z velocity" << zVelocity << "\n";
-		velocityVector = glm::vec3(0.0f, yVelocity, zVelocity);	
+		//std::cout << "1) y velocity: " << yVelocity << " z velocity: " << zVelocity << "\n";
+		std::cout << "2) y velocity: " << y << " z velocity: " << z << "\n";
+		velocityVector = glm::vec3(0.0f, y, z);	
 	}
 	
 	void controls() {
