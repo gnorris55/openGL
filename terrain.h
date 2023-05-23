@@ -5,6 +5,7 @@
 #include "shader.h"
 #include "sphere.h"
 #include "game_object.h"
+#include "calculations.h"
 
 template <int LENGTH>
 
@@ -19,6 +20,7 @@ class Terrain {
 	
 
 	Shader *program;
+	Math math;
 	Renderer renderer;
 	glm::vec3 color;
 	glm::vec3 points[LENGTH][LENGTH];
@@ -89,19 +91,19 @@ class Terrain {
 		float xCoord = (fmodf(posX,gridSquareSize)/gridSquareSize);
 		float zCoord = (fmodf(posZ,gridSquareSize)/gridSquareSize);
 		if (xCoord <= (1-zCoord)) {
-			*height = barryCentric(glm::vec3(0, heightMap[gridX][gridZ], 0), 
+			*height = math.barryCentric(glm::vec3(0, heightMap[gridX][gridZ], 0), 
 				     	glm::vec3(1, heightMap[gridX+1][gridZ], 0),
 				     	glm::vec3(0, heightMap[gridX][gridZ+1], 1),
 				     	glm::vec2(xCoord, zCoord));
 
-			return calculateNormals(points[gridX][gridZ], points[gridX+1][gridZ], points[gridX][gridZ+1]);			
+			return math.calculateNormals(points[gridX][gridZ], points[gridX+1][gridZ], points[gridX][gridZ+1]);			
 		} else {
-			*height = barryCentric(glm::vec3(1, heightMap[gridX+1][gridZ], 0), 
+			*height = math.barryCentric(glm::vec3(1, heightMap[gridX+1][gridZ], 0), 
 				     	glm::vec3(1, heightMap[gridX+1][gridZ+1], 1),
 				     	glm::vec3(0, heightMap[gridX][gridZ+1], 1),
 				    	glm::vec2(xCoord, zCoord));
 
-			return calculateNormals(points[gridX+1][gridZ], points[gridX+1][gridZ+1], points[gridX][gridZ]);			
+			return math.calculateNormals(points[gridX+1][gridZ], points[gridX+1][gridZ+1], points[gridX][gridZ]);			
 		}
 
 		
@@ -190,28 +192,9 @@ class Terrain {
 		for (int i = 0; i < VERTEX_COUNT; i++) {
 			for (int j = 0; j < VERTEX_COUNT; j++) {
 				if ((j != VERTEX_COUNT-1 && i != VERTEX_COUNT-1) || (j == VERTEX_COUNT-1 && i == VERTEX_COUNT-1)) {
-
-					//first triangle
-					vertexToElement(vertices, &vertex, points[i][j]);
-					vertexToElement(vertices, &vertex, points[i][j+1]);
-					vertexToElement(vertices, &vertex, points[i+1][j]);
-					
-					glm::vec3 normalVec = calculateNormals(points[i][j], points[i][j+1], points[i+1][j]);
-					vertexToElement(normals, &normalsVertex, normalVec);
-					vertexToElement(normals, &normalsVertex, normalVec);
-					vertexToElement(normals, &normalsVertex, normalVec);
-
-
-					//second triangle
-					vertexToElement(vertices, &vertex, points[i][j+1]);
-					vertexToElement(vertices, &vertex, points[i+1][j+1]);
-					vertexToElement(vertices, &vertex, points[i+1][j]);
-					
-					normalVec = calculateNormals(points[i][j+1], points[i+1][j+1], points[i+1][j]);
-					vertexToElement(normals, &normalsVertex, normalVec);
-					vertexToElement(normals, &normalsVertex, normalVec);
-					vertexToElement(normals, &normalsVertex, normalVec);
-					
+			
+					glm::vec3 inputPoints[] = {points[i][j], points[i][j+1], points[i+1][j], points[i+1][j+1]};
+					math.mapSquare(vertices, normals, &vertex, &normalsVertex, inputPoints, glm::vec3(1.0f, 1.0f, 1.0f));	
 					
 				}
 
@@ -219,27 +202,7 @@ class Terrain {
 
 		}
 	}
-	void vertexToElement(float vertices[], int *vertex,  glm::vec3 vector) {
-		vertices[*vertex] = vector.x;
-		vertices[*vertex+1] = vector.y;
-		vertices[*vertex+2] = vector.z;
-		*vertex += 3;
-	}
 
-	glm::vec3 calculateNormals(glm::vec3 vectorA, glm::vec3 vectorB, glm::vec3 vectorC) {
-		//(B-A)x(C-A)
-		//
-		return glm::cross(vectorB - vectorA, vectorC - vectorA);
-
-	}
-	
-	float barryCentric(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec2 pos) {
-		float det = (p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z);
-		float l1 = ((p2.z - p3.z) * (pos.x - p3.x) + (p3.x - p2.x) * (pos.y - p3.z)) / det;
-		float l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det;
-		float l3 = 1.0f - l1 - l2;
-		return l1 * p1.y + l2 * p2.y + l3 * p3.y;
-	}
 
 };
 

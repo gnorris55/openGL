@@ -33,6 +33,35 @@ class Camera {
 		glUniformMatrix4fv(glGetUniformLocation(programID, "view"), 1, GL_FALSE, glm::value_ptr(view));
                 glUniformMatrix4fv(glGetUniformLocation(programID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	}
+
+	void controls(GLFWwindow *window) {
+ 		const float objectSpeed = 0.15f;
+                if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+                        displacement.x += objectSpeed;
+                }
+                if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+                        displacement.x -= objectSpeed;
+                }
+                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                        displacement.z += objectSpeed;
+                }
+                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                        displacement.z -= objectSpeed;
+                }
+                if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+                        xAngle -= objectSpeed*5;
+                }
+                if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+                        xAngle += objectSpeed*5;
+                }
+                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+                        yAngle -= objectSpeed*5;
+                }
+                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+                        yAngle += objectSpeed*5;
+		}
+
+	}
 	
 
 

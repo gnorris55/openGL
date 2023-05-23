@@ -23,10 +23,12 @@
 #include "light.h"
 #include "game_object.h"
 #include "camera.h"
+#include "math.h"
 
 // global variables
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+Math math;
 
 // declaring functions
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -35,6 +37,7 @@ glm::vec3 calculateNormals(glm::vec3 vectorA, glm::vec3 vectorB, glm::vec3 vecto
 void processInput(GLFWwindow *window, unsigned int program);
 void checkCompileErrors(unsigned int shader, std::string type);
 void vertexToElement(float vertices[], int *vertex,  glm::vec3 vector);
+void engineControls(GLFWwindow *window, int *command);
 
 
 class MainGameLoop {
@@ -72,8 +75,9 @@ class MainGameLoop {
 			return -1;
 		}
 		
-		Shader programShader = Shader("vertex_shader.vs", "fragment_shader.fs");
-		Shader lightingShader = Shader("lighting_vertex_shader.vs", "lighting_fragment_shader.fs");
+		Shader programShader = Shader("Shaders/vertex_shader.vs", "Shaders/fragment_shader.fs");
+		Shader lightingShader = Shader("Shaders/lighting_vertex_shader.vs", "Shaders/lighting_fragment_shader.fs");
+		Shader aimerShader = Shader("Shaders/lighting_vertex_shader.vs", "Shaders/aimer_fragment_shader.fs");
 		
 		unsigned int stackCount = 16;
 		unsigned int sectorCount = 16;
@@ -178,16 +182,20 @@ class MainGameLoop {
 		RawModel sphere = createSphere(sphereVertices, sphereNormals, stackCount, sectorCount, loader);
 	
 		// creating objects	
-		SphereObject ball = SphereObject(0.43f, &programShader, window, renderer, glm::vec3(5.0f, 1.0f, 35.0f), glm::vec3(1.0, 1.0, 1.0), &sphere);
+		GolfBall golfBall = GolfBall(0.43f, &programShader, window, renderer, glm::vec3(5.0f, 1.0f, -5.0f), glm::vec3(1.0, 1.0, 1.0), &sphere, 45.0f, 20.0f, loader);
 		Terrain<128> terrain = Terrain<128>(&programShader, renderer, 0, 0, glm::vec3(0.0f, 0.90f, 0.48f));
 		RawModel terrainModel = terrain.generateTerrain(loader);
 
 		// creating tools
 		Light lightCube = Light(&lightingShader, renderer, glm::vec3(-2.0f, 40.0f, 0.0f), glm::vec3(0.9f, 0.7f, 0.7f), &cube, window);
-		Camera camera = Camera(glm::vec3(-15.0f, -5.0f, -20.0f), 5.0f, 0.0f);
+		Camera camera = Camera(glm::vec3(0.0f,-10.0f, -20.0f), 5.0f, 0.0f);
 		Editor editor = Editor(&programShader, renderer, glm::vec3(0.0f,5.0f,0.0f), 10, window, &sphere);
+
+		int command = 1;
 		
 		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		//glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 		
 		
@@ -200,6 +208,21 @@ class MainGameLoop {
 			renderer.prepare();
 			processInput(window, programShader.ID);
 
+			// for controls
+			
+			engineControls(window, &command);
+			std::cout << command << "\n";
+			if (command == 1) {
+				//TODO:
+				golfBall.controls();
+			} else if (command == 2) {
+				// take control of editor;
+				editor.render();
+				terrain.edit(&editor, &terrainModel, loader);
+			} else if (command == 3) {
+				camera.controls(window);
+			}
+
 			//rendering light source
 			glUseProgram(lightingShader.ID);
 			camera.define(lightingShader.ID);	
@@ -211,14 +234,18 @@ class MainGameLoop {
 			camera.define(programShader.ID);
 
 			// object methods
-			terrain.edit(&editor, &terrainModel, loader);
-			physicsManager.terrainSphereManager(&ball, &terrain, &angle, &velocity);
+			//terrain.edit(&editor, &terrainModel, loader);
+			physicsManager.terrainSphereManager(&golfBall, &terrain, &angle, &velocity);
 
 			// rendering objects
-			editor.render();
-			ball.render(lightCube.displacement, lightCube.color, camera.displacement);
+			//editor.render();
+			golfBall.render(lightCube.displacement, lightCube.color, camera.displacement);
 			terrain.render(&terrainModel, lightCube.displacement, lightCube.color, camera.displacement);	
-			
+
+			//TODO: shader for  aimer of the golfball
+			glUseProgram(aimerShader.ID);
+			camera.define(aimerShader.ID);	
+			golfBall.renderAimer(&aimerShader);	
 			// closing frame
 			glfwSwapBuffers(window);
 			glfwPollEvents();	
@@ -232,6 +259,19 @@ int main() {
 	
 	MainGameLoop main;
 	main.start();
+
+}
+
+void engineControls(GLFWwindow *window, int *command) {
+
+	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+		*command = 1;
+	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+		*command = 2;
+	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+		*command = 3;
+
+
 
 }
 
@@ -276,42 +316,12 @@ RawModel createSphere(float vertices[], float normals[], int stackCount, int sec
 
         for ( int i = 0; i < stackCount; ++i) {
                 for ( int j = 0; j < sectorCount; ++j) {
-                        vertexToElement(vertices, &vertex, points[i][j]);
-                        vertexToElement(vertices, &vertex, points[i+1][j]);
-                        vertexToElement(vertices, &vertex, points[i][j+1]);
-
-			glm::vec3 normalVec = calculateNormals(points[i][j], points[i][j+1], points[i+1][j]);
-                        glm::vec3 scalar = glm::vec3(-1.0f, -1.0f, -1.0f);
-                        normalVec *= scalar;
-                        vertexToElement(normals, &normalsVertex, normalVec);
-                        vertexToElement(normals, &normalsVertex, normalVec);
-                        vertexToElement(normals, &normalsVertex, normalVec);
-
-                        vertexToElement(vertices, &vertex, points[i][j+1]);
-                        vertexToElement(vertices, &vertex, points[i+1][j]);
-                        vertexToElement(vertices, &vertex, points[i+1][j+1]);
-
-			normalVec = calculateNormals(points[i][j+1], points[i+1][j+1], points[i+1][j]);
-                        normalVec *= scalar;
-                        vertexToElement(normals, &normalsVertex, normalVec);
-                        vertexToElement(normals, &normalsVertex, normalVec);
-                        vertexToElement(normals, &normalsVertex, normalVec);
-
+			glm::vec3 inputPoints[] = {points[i][j], points[i][j+1], points[i+1][j], points[i+1][j+1]};
+                     	math.mapSquare(vertices, normals, &vertex, &normalsVertex, inputPoints, glm::vec3(-1.0f, -1.0f, -1.0f));
                 }
         }
 
         return loader.loadToVAO(vertices, normals, normalsVertex*sizeof(float));
 }
 
-void vertexToElement(float vertices[], int *vertex,  glm::vec3 vector) {
-        vertices[*vertex] = vector.x;
-        vertices[*vertex+1] = vector.y;
-        vertices[*vertex+2] = vector.z;
-        *vertex += 3;
-}
-glm::vec3 calculateNormals(glm::vec3 vectorA, glm::vec3 vectorB, glm::vec3 vectorC) {
-        //(B-A)x(C-A)
-        return glm::cross(vectorB - vectorA, vectorC - vectorA);
-
-}
 

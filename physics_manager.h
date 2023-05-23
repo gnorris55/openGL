@@ -11,30 +11,40 @@ class PhysicsManager {
 
 	public:
 
-	void terrainSphereManager(SphereObject *sphere, Terrain<128> *terrain, float *angle, float *velocity) {
+	void terrainSphereManager(GolfBall *sphere, Terrain<128> *terrain, float *angle, float *velocity) {
 		// if collision is not detected, move sphere and check for collision
 		if (sphere->collision == false) {
-			sphere->projectileMotion(*angle, *velocity);
+			sphere->projectileMotion();
 
 			//height and normal of the current terrain triangle under sphere
 			float terrainHeight = 0;
 			glm::vec3 terrainNormal = terrain->getHeight(sphere->displacement.x, sphere->displacement.z, &terrainHeight);
 
                 	if (sphereTerrainCollisionDetection(sphere, terrainNormal, terrainHeight) == 1)
-				sphereTerrainCollisionResponse(sphere, terrainNormal, terrainHeight, angle, velocity);
+				sphereTerrainCollisionResponse(sphere, terrainNormal, terrainHeight);
 		}
 	}
 
+	void terrainSphereManager(GolfBall *sphere, Terrain<128> *terrain) {
+                // if collision is not detected, move sphere and check for collision
+                if (sphere->collision == false) {
+                        sphere->projectileMotion();
 
+                        //height and normal of the current terrain triangle under sphere
+                        float terrainHeight = 0;
+                        glm::vec3 terrainNormal = terrain->getHeight(sphere->displacement.x, sphere->displacement.z, &terrainHeight);
 
-
+                        if (sphereTerrainCollisionDetection(sphere, terrainNormal, terrainHeight) == 1)
+                                sphereTerrainCollisionResponse(sphere, terrainNormal, terrainHeight);
+                }
+        }
 
 	private:
 	
 	//TODO:
 	// SPHERE TERRAIN PHYSICS============================
 
-	int sphereTerrainCollisionDetection(SphereObject *sphere, glm::vec3 triangleNormal, float triangleHeight) {
+	int sphereTerrainCollisionDetection(GolfBall *sphere, glm::vec3 triangleNormal, float triangleHeight) {
 		
 		if ((sphere->displacement.y - triangleHeight) <= (sphere->radius) && (glfwGetTime()-sphere->startTime) > 0.1f) {
 			sphere->collision = true;
@@ -43,13 +53,13 @@ class PhysicsManager {
 		return 0;
 	}
 
-	void sphereTerrainCollisionResponse(SphereObject *sphere, glm::vec3 normalVector, float triangleHeight, float *angle, float *velocity) {
+	void sphereTerrainCollisionResponse(GolfBall *sphere, glm::vec3 normalVector, float triangleHeight) {
 				
 		//TODO: make it work
 		glm::vec3 velocityVector = sphere->velocityVector;
 		float dir = 1;
 		//std::cout << normalVector.x << ", " << normalVector.y << ", " << normalVector.y << "\n";
-		std::cout << "initial velocity: " << *velocity << "current velocity: " << glm::length(velocityVector) << "\n";
+		std::cout << "initial velocity: " << sphere->shotVelocity << "current velocity: " << glm::length(velocityVector) << "\n";
 		if (((normalVector.x != 0) && velocityVector.z < 0) || velocityVector.z > 0) {
 			std::cout << "alrighty\n";
 			dir = -1;
@@ -63,21 +73,22 @@ class PhysicsManager {
 			float dot = glm::dot(glm::normalize(velocityVector), glm::normalize(normalVector));
 			if (dot > 1) {dot = 0.99;}
 			if (dot < -1) {dot = -0.99f;}
+
 			std::cout << "dot product: " << dot << "\n";
 			float angleOfCollision = acos(dot)*180/3.14;
 			std::cout << "angle: " << 90-angleOfCollision << "\n";
-			//printCollisionStats(velocityVector, sphere->displacement, normalVector, triangleHeight, angleOfCollision);
+
 			sphere->startingPosition += sphere->flightVec;
 			sphere->setTime();
 			sphere->flightVec = glm::vec3(0.0f, 0.0f, 0.0f);
-			*angle = 90 - angleOfCollision;
+			sphere->shotAngle = 90 - angleOfCollision;
 
 			if (glm::length(velocityVector) > 18) {
-				*velocity = 15.0f*dir;
+				sphere->shotVelocity = 15.0f*dir;
 			}	else {
-				*velocity = glm::length(velocityVector);
+				sphere->shotVelocity = glm::length(velocityVector);
 			}
-			std::cout << "output velocity: " << *velocity << " output angle: " << *angle << "\n";
+			std::cout << "output velocity: " << sphere->shotVelocity << " output angle: " << sphere->shotAngle << "\n";
 			sphere->collision = false;
 		}
 
